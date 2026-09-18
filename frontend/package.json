@@ -1,0 +1,16 @@
+{
+  "name": "ai-comm-tutor-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for AI-Powered Virtual Communication Tutor",
+  "scripts": {
+    "start": "http-server -p 3000"
+  },
+  "dependencies": {
+    "adapter.js": "^0.8.0",
+    "simple-peer": "^9.11.1",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

@@ -1,0 +1,9 @@
+Flask
+flask-socketio
+flask-cors
+python-dotenv
+groq
+edge-tts
+requests
+sqlalchemy
+pydub
