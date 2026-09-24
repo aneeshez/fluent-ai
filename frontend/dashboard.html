@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - FluentAI</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout.css">
+
+    <style>
+        .stat-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: var(--space-4);
+        }
+
+        .stat-card-icon.purple {
+            background: rgba(139, 92, 246, 0.2);
+        }
+
+        .stat-card-icon.blue {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .stat-card-icon.green {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .stat-card-icon.orange {
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            padding: var(--space-4);
+            border-radius: var(--radius-lg);
+            transition: all var(--transition-base);
+        }
+
+        .activity-item:hover {
+            background: var(--glass-bg);
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--glass-bg);
+            font-size: 1.25rem;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: var(--font-medium);
+            margin-bottom: var(--space-1);
+        }
+
+        .activity-time {
+            font-size: var(--text-sm);
+            color: var(--text-muted);
+        }
+
+        .goal-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            padding: var(--space-3) 0;
+        }
+
+        .goal-info {
+            flex: 1;
+        }
+
+        .goal-label {
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-2);
+        }
+
+        .goal-value {
+            font-size: var(--text-xs);
+            color: var(--text-muted);
+        }
+
+        .level-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-4);
+            background: var(--gradient-primary);
+            border-radius: var(--radius-full);
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+        }
+
+        .streak-flame {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-4);
+        }
+
+        @media (max-width: 768px) {
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.2);
+            }
+        }
+
+        .recording-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.2s;
+        }
+
+        .recording-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .recording-item.playing {
+            border-color: rgba(99, 102, 241, 0.4);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .rec-play-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: var(--gradient-primary);
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s;
+        }
+
+        .rec-play-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .rec-delete-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .rec-delete-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <!-- Navigation -->
+        <nav class="nav" id="navbar">
+            <div class="nav-container">
+                <a href="index.html" class="nav-logo">
+                    <div class="nav-logo-icon">🎓</div>
+                    <span class="nav-logo-text">FluentAI</span>
+                </a>
+
+                <div class="nav-links">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="dashboard.html" class="nav-link active">Dashboard</a>
+                    <a href="practice.html" class="nav-link">Practice</a>
+                    <a href="challenges.html" class="nav-link">Challenges</a>
+                    <a href="writing.html" class="nav-link">Writing</a>
+                </div>
+
+                <div class="nav-actions">
+                    <div class="nav-user" id="navUser">
+                        <div class="nav-user-info">
+                            <div class="nav-user-name" id="userName">Loading...</div>
+                            <div class="nav-user-email" id="userEmail"></div>
+                        </div>
+                        <div class="avatar" id="userAvatar">?</div>
+                    </div>
+                </div>
+
+                <button class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </nav>
+
+        <main class="page-content">
+            <div class="container dashboard">
+                <!-- Dashboard Header -->
+                <div class="dashboard-header animate-fade-in-down">
+                    <div class="dashboard-welcome">
+                        <h1>Welcome back, <span id="welcomeName" class="text-gradient">Learner</span>! 👋</h1>
+                        <p>Let's continue your English learning journey.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: var(--space-4);">
+                        <div class="streak-flame">
+                            <span>🔥</span>
+                            <span id="streakCount">0</span>
+                            <span style="font-size: var(--text-sm); font-weight: normal; color: var(--text-muted);">day
+                                streak</span>
+                        </div>
+                        <div class="level-badge" id="levelBadge">
+                            ⭐ Beginner
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="dashboard-stats stagger">
+                    <div class="glass-card stat-card animate-fade-in-up">
+                        <div class="stat-card-icon purple">🎤</div>
+                        <div class="stat-value" id="statWords">0</div>
+                        <div class="stat-label">Words Spoken</div>
+                    </div>
+
+                    <div class="glass-card stat-card animate-fade-in-up">
+                        <div class="stat-card-icon blue">📝</div>
+                        <div class="stat-value" id="statSessions">0</div>
+                        <div class="stat-label">Sessions Completed</div>
+                    </div>
+
+                    <div class="glass-card stat-card animate-fade-in-up">
+                        <div class="stat-card-icon green">⏱️</div>
+                        <div class="stat-value" id="statMinutes">0</div>
+                        <div class="stat-label">Minutes Practiced</div>
+                    </div>
+
+                    <div class="glass-card stat-card animate-fade-in-up">
+                        <div class="stat-card-icon orange">⚡</div>
+                        <div class="stat-value" id="statXP">0</div>
+                        <div class="stat-label">XP Earned</div>
+                    </div>
+                </div>
+
+                <!-- Main Content Grid -->
+                <div class="dashboard-grid">
+                    <!-- Left Column -->
+                    <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+                        <!-- Quick Actions -->
+                        <div class="glass-card-static" style="padding: var(--space-6);">
+                            <h3 style="margin-bottom: var(--space-6);">Quick Actions</h3>
+                            <div class="quick-actions">
+                                <a href="practice.html" class="glass-card action-card">
+                                    <div class="action-card-icon" style="background: var(--gradient-primary);">🎤</div>
+                                    <div class="action-card-content">
+                                        <div class="action-card-title">Speaking Practice</div>
+                                        <div class="action-card-subtitle">Practice conversation with AI</div>
+                                    </div>
+                                    <span class="action-card-arrow">→</span>
+                                </a>
+
+                                <a href="writing.html" class="glass-card action-card">
+                                    <div class="action-card-icon"
+                                        style="background: linear-gradient(135deg, #3b82f6, #6366f1);">✍️</div>
+                                    <div class="action-card-content">
+                                        <div class="action-card-title">Writing Test</div>
+                                        <div class="action-card-subtitle">Improve your writing skills</div>
+                                    </div>
+                                    <span class="action-card-arrow">→</span>
+                                </a>
+
+                                <a href="challenges.html" class="glass-card action-card">
+                                    <div class="action-card-icon"
+                                        style="background: linear-gradient(135deg, #f59e0b, #ef4444);">🎯</div>
+                                    <div class="action-card-content">
+                                        <div class="action-card-title">Daily Challenge</div>
+                                        <div class="action-card-subtitle">Earn bonus XP today</div>
+                                    </div>
+                                    <span class="action-card-arrow">→</span>
+                                </a>
+
+                                <a href="profile.html" class="glass-card action-card">
+                                    <div class="action-card-icon"
+                                        style="background: linear-gradient(135deg, #10b981, #059669);">👤</div>
+                                    <div class="action-card-content">
+                                        <div class="action-card-title">My Profile</div>
+                                        <div class="action-card-subtitle">View achievements & settings</div>
+                                    </div>
+                                    <span class="action-card-arrow">→</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="glass-card-static" style="padding: var(--space-6);">
+                            <h3 style="margin-bottom: var(--space-4);">Recent Activity</h3>
+                            <div id="activityList">
+                                <div class="activity-item">
+                                    <div class="activity-icon">🎤</div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">Speaking Practice</div>
+                                        <div class="activity-time">Start your first session!</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Session Recordings -->
+                        <div class="glass-card-static" style="padding: var(--space-6);">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+                                <h3>📼 Session Recordings</h3>
+                                <span style="font-size:12px; color:var(--text-muted);" id="sessionCount">0
+                                    sessions</span>
+                            </div>
+
+                            <!-- Sessions List -->
+                            <div id="sessionsList"
+                                style="display:flex; flex-direction:column; gap:10px; max-height:500px; overflow-y:auto;">
+                                <div
+                                    style="text-align:center; color:var(--text-muted); font-size:13px; padding:20px 0;">
+                                    No session recordings yet. Complete a practice session to see it here!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+                        <!-- Weekly Goals -->
+                        <div class="glass-card-static" style="padding: var(--space-6);">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
+                                <h3>Weekly Goals</h3>
+                                <span class="badge badge-primary">3/5 Complete</span>
+                            </div>
+
+                            <div class="goal-item">
+                                <div class="goal-info">
+                                    <div class="goal-label">Practice 5 times</div>
+                                    <div class="progress-bar">
+                                        <div class="progress-bar-fill" style="width: 60%;"></div>
+                                    </div>
+                                    <div class="goal-value">3/5 sessions</div>
+                                </div>
+                            </div>
+
+                            <div class="goal-item">
+                                <div class="goal-info">
+                                    <div class="goal-label">Speak 500 words</div>
+                                    <div class="progress-bar">
+                                        <div class="progress-bar-fill" style="width: 40%;"></div>
+                                    </div>
+                                    <div class="goal-value">200/500 words</div>
+                                </div>
+                            </div>
+
+                            <div class="goal-item">
+                                <div class="goal-info">
+                                    <div class="goal-label">Complete a writing test</div>
+                                    <div class="progress-bar">
+                                        <div class="progress-bar-fill" style="width: 0%;"></div>
+                                    </div>
+                                    <div class="goal-value">0/1 tests</div>
+                                </div>
+                            </div>
+
+                            <div class="goal-item">
+                                <div class="goal-info">
+                                    <div class="goal-label">Finish a challenge</div>
+                                    <div class="progress-bar">
+                                        <div class="progress-bar-fill"
+                                            style="width: 100%; background: var(--gradient-success);"></div>
+                                    </div>
+                                    <div class="goal-value">✓ Complete!</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Achievements -->
+                        <div class="glass-card-static" style="padding: var(--space-6);">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
+                                <h3>Achievements</h3>
+                                <a href="profile.html"
+                                    style="font-size: var(--text-sm); color: var(--accent-primary);">View All →</a>
+                            </div>
+
+                            <div style="display: flex; gap: var(--space-4); flex-wrap: wrap;">
+                                <div class="glass-card"
+                                    style="padding: var(--space-4); text-align: center; flex: 1; min-width: 100px;">
+                                    <div style="font-size: 2rem; margin-bottom: var(--space-2);">🌟</div>
+                                    <div style="font-size: var(--text-xs); color: var(--text-muted);">First Steps</div>
+                                </div>
+                                <div class="glass-card"
+                                    style="padding: var(--space-4); text-align: center; flex: 1; min-width: 100px;">
+                                    <div style="font-size: 2rem; margin-bottom: var(--space-2);">🔥</div>
+                                    <div style="font-size: var(--text-xs); color: var(--text-muted);">3-Day Streak</div>
+                                </div>
+                                <div class="glass-card"
+                                    style="padding: var(--space-4); text-align: center; flex: 1; min-width: 100px; opacity: 0.4;">
+                                    <div style="font-size: 2rem; margin-bottom: var(--space-2);">🏆</div>
+                                    <div style="font-size: var(--text-xs); color: var(--text-muted);">Locked</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tip of the Day -->
+                        <div class="glass-card"
+                            style="padding: var(--space-6); background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2);">
+                            <div style="display: flex; align-items: flex-start; gap: var(--space-4);">
+                                <div style="font-size: 2rem;">💡</div>
+                                <div>
+                                    <h4 style="margin-bottom: var(--space-2);">Tip of the Day</h4>
+                                    <p
+                                        style="font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.7;">
+                                        Practice speaking out loud, even when you're alone. This helps build confidence
+                                        and improves your pronunciation naturally.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Check auth
+        const user = JSON.parse(localStorage.getItem('fluentai_user') || 'null');
+        if (!user) {
+            window.location.href = 'login.html';
+        }
+
+        // Load user data
+        if (user) {
+            document.getElementById('welcomeName').textContent = user.name?.split(' ')[0] || 'Learner';
+            document.getElementById('userName').textContent = user.name || 'User';
+            document.getElementById('userEmail').textContent = user.email || '';
+            document.getElementById('userAvatar').textContent = (user.name || 'U').charAt(0).toUpperCase();
+
+            if (user.picture) {
+                document.getElementById('userAvatar').innerHTML = `<img src="${user.picture}" alt="">`;
+            }
+        }
+
+        // Load progress
+        const progress = JSON.parse(localStorage.getItem('fluentai_progress') || '{}');
+        document.getElementById('statWords').textContent = progress.wordsSpoken || 0;
+        document.getElementById('statSessions').textContent = progress.sessionsCompleted || 0;
+        document.getElementById('statMinutes').textContent = progress.totalMinutes || 0;
+        document.getElementById('statXP').textContent = progress.xp || 0;
+        document.getElementById('streakCount').textContent = progress.streak || 0;
+        document.getElementById('levelBadge').textContent = `⭐ ${progress.level || 'Beginner'}`;
+
+        // Load activity
+        const activities = JSON.parse(localStorage.getItem('fluentai_activities') || '[]');
+        if (activities.length > 0) {
+            const activityList = document.getElementById('activityList');
+            activityList.innerHTML = activities.slice(0, 5).map(a => `
+        <div class="activity-item">
+          <div class="activity-icon">${a.icon}</div>
+          <div class="activity-content">
+            <div class="activity-title">${a.title}</div>
+            <div class="activity-time">${a.time}</div>
+          </div>
+        </div>
+      `).join('');
+        }
+
+        // Navigation
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // User menu (logout on click for now)
+        document.getElementById('navUser').addEventListener('click', () => {
+            if (confirm('Do you want to log out?')) {
+                localStorage.removeItem('fluentai_user');
+                window.location.href = 'login.html';
+            }
+        });
+
+        // ============================================
+        // SESSION RECORDINGS (Conversation Transcripts)
+        // ============================================
+        const sessionsList = document.getElementById('sessionsList');
+        const sessionCount = document.getElementById('sessionCount');
+        let expandedSession = -1;
+
+        function getSessions() {
+            return JSON.parse(localStorage.getItem('fluentai_sessions') || '[]');
+        }
+
+        function formatDuration(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function formatDate(iso) {
+            const d = new Date(iso);
+            const now = new Date();
+            const diff = now - d;
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function renderSessions() {
+            const sessions = getSessions();
+            sessionCount.textContent = `${sessions.length} session${sessions.length !== 1 ? 's' : ''}`;
+
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = `
+                    <div style="text-align:center; color:var(--text-muted); font-size:13px; padding:20px 0;">
+                        No session recordings yet. Complete a practice session to see it here!
+                    </div>`;
+                return;
+            }
+
+            sessionsList.innerHTML = sessions.map((s, i) => {
+                const challengeTag = s.challenge
+                    ? `<span style="font-size:10px;padding:2px 8px;background:rgba(139,92,246,0.2);color:#a78bfa;border-radius:10px;">${s.challenge}</span>`
+                    : `<span style="font-size:10px;padding:2px 8px;background:rgba(59,130,246,0.15);color:#60a5fa;border-radius:10px;">Free Talk</span>`;
+
+                // Confidence badge
+                let confidenceBadge = '';
+                if (s.confidence && s.confidence.score !== undefined) {
+                    const c = s.confidence;
+                    const colors = { low: '#f87171', growing: '#fbbf24', steady: '#34d399', high: '#60a5fa' };
+                    const emojis = { low: '🔴', growing: '🟡', steady: '🟢', high: '🔵' };
+                    const clr = colors[c.level] || '#34d399';
+                    const emoji = emojis[c.level] || '🟢';
+                    confidenceBadge = `<span style="font-size:10px;padding:2px 8px;background:${clr}15;color:${clr};border-radius:10px;border:1px solid ${clr}30;">${emoji} ${c.score}% Confidence</span>`;
+                }
+
+                const isExpanded = expandedSession === i;
+                let messagesHTML = '';
+
+                if (isExpanded && s.messages) {
+                    messagesHTML = `
+                    <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);max-height:350px;overflow-y:auto;" id="chat-${i}">
+                        ${s.messages.map(msg => {
+                        const isUser = msg.type === 'user';
+                        return `
+                            <div style="display:flex;justify-content:${isUser ? 'flex-end' : 'flex-start'};margin-bottom:6px;">
+                                <div style="max-width:85%;padding:8px 12px;border-radius:${isUser ? '12px 12px 2px 12px' : '12px 12px 12px 2px'};
+                                    background:${isUser ? 'linear-gradient(135deg,rgba(139,92,246,0.3),rgba(99,102,241,0.2))' : 'rgba(255,255,255,0.05)'};
+                                    border:1px solid ${isUser ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.06)'};
+                                    font-size:12px;line-height:1.5;color:${isUser ? '#e0d4fd' : 'rgba(255,255,255,0.7)'};">
+                                    <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-bottom:2px;">${isUser ? '🧑 You' : '🤖 Luna'}</div>
+                                    ${msg.text}
+                                </div>
+                            </div>`;
+                    }).join('')}
+                    </div>`;
+                }
+
+                return `
+                <div class="recording-item" style="flex-direction:column;align-items:stretch;cursor:pointer;" onclick="toggleSession(${i})">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:36px;height:36px;border-radius:50%;background:${isExpanded ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(255,255,255,0.05)'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">
+                            ${isExpanded ? '📖' : '📼'}
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap;">
+                                ${challengeTag}
+                                ${confidenceBadge}
+                                <span style="font-size:11px;color:var(--text-muted);">${formatDate(s.date)}</span>
+                            </div>
+                            <div style="font-size:11px;color:var(--text-muted);display:flex;gap:10px;">
+                                <span>⏱️ ${formatDuration(s.duration)}</span>
+                                <span>💬 ${s.messages ? s.messages.length : 0} msgs</span>
+                                <span>📝 ${s.wordCount || 0} words</span>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:4px;">
+                            <button class="rec-play-btn" style="width:28px;height:28px;font-size:12px;" onclick="event.stopPropagation();toggleSession(${i})" title="${isExpanded ? 'Collapse' : 'Expand'}">
+                                ${isExpanded ? '▲' : '▼'}
+                            </button>
+                            <button class="rec-delete-btn" onclick="event.stopPropagation();deleteSession(${i})" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+                    ${messagesHTML}
+                </div>`;
+            }).join('');
+        }
+
+        function toggleSession(index) {
+            expandedSession = expandedSession === index ? -1 : index;
+            renderSessions();
+        }
+
+        function deleteSession(index) {
+            if (!confirm('Delete this session recording?')) return;
+            const sessions = getSessions();
+            sessions.splice(index, 1);
+            localStorage.setItem('fluentai_sessions', JSON.stringify(sessions));
+            if (expandedSession === index) expandedSession = -1;
+            renderSessions();
+        }
+
+        // Init sessions on load
+        renderSessions();
+
+        // ============================================
+        // DYNAMIC WEEKLY GOALS
+        // ============================================
+        const sessionsGoal = 5;
+        const wordsGoal = 500;
+        const writingGoal = 1;
+        const challengeGoal = 1;
+
+        const sessionsCount = progress.sessionsCompleted || 0;
+        const wordsCount = progress.wordsSpoken || 0;
+        const writingsCount = progress.writingsCompleted || 0;
+        const challengesCount = progress.challengesCompleted || 0;
+        const goalsCompleted = (sessionsCount >= sessionsGoal ? 1 : 0) + (wordsCount >= wordsGoal ? 1 : 0) + (writingsCount >= writingGoal ? 1 : 0) + (challengesCount >= challengeGoal ? 1 : 0);
+
+        // Update goal progress bars
+        const goalItems = document.querySelectorAll('.goal-item');
+        if (goalItems[0]) {
+            goalItems[0].querySelector('.progress-bar-fill').style.width = Math.min(100, (sessionsCount / sessionsGoal) * 100) + '%';
+            goalItems[0].querySelector('.goal-value').textContent = sessionsCount >= sessionsGoal ? '✓ Complete!' : `${sessionsCount}/${sessionsGoal} sessions`;
+        }
+        if (goalItems[1]) {
+            goalItems[1].querySelector('.progress-bar-fill').style.width = Math.min(100, (wordsCount / wordsGoal) * 100) + '%';
+            goalItems[1].querySelector('.goal-value').textContent = wordsCount >= wordsGoal ? '✓ Complete!' : `${wordsCount}/${wordsGoal} words`;
+        }
+        if (goalItems[2]) {
+            goalItems[2].querySelector('.progress-bar-fill').style.width = Math.min(100, (writingsCount / writingGoal) * 100) + '%';
+            goalItems[2].querySelector('.goal-value').textContent = writingsCount >= writingGoal ? '✓ Complete!' : `${writingsCount}/${writingGoal} tests`;
+        }
+        if (goalItems[3]) {
+            goalItems[3].querySelector('.progress-bar-fill').style.width = Math.min(100, (challengesCount / challengeGoal) * 100) + '%';
+            goalItems[3].querySelector('.goal-value').textContent = challengesCount >= challengeGoal ? '✓ Complete!' : `${challengesCount}/${challengeGoal} challenges`;
+            if (challengesCount >= challengeGoal) goalItems[3].querySelector('.progress-bar-fill').style.background = 'var(--gradient-success)';
+        }
+        // Update badge
+        const goalBadge = document.querySelector('.badge.badge-primary');
+        if (goalBadge) goalBadge.textContent = `${goalsCompleted}/4 Complete`;
+    </script>
+</body>
+
+</html>

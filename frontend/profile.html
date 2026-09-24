@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - FluentAI</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout.css">
+
+    <style>
+        .profile-header {
+            text-align: center;
+            padding: var(--space-12) 0 var(--space-8);
+        }
+
+        .profile-avatar-wrapper {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto var(--space-6);
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
+            overflow: hidden;
+            border: 3px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-avatar-edit {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: 2px solid var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+
+        .profile-avatar-edit:hover {
+            transform: scale(1.1);
+        }
+
+        .profile-name {
+            font-size: var(--text-3xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-2);
+        }
+
+        .profile-email {
+            color: var(--text-muted);
+            margin-bottom: var(--space-1);
+        }
+
+        .profile-joined {
+            font-size: var(--text-xs);
+            color: rgba(255, 255, 255, 0.25);
+            margin-bottom: var(--space-4);
+        }
+
+        .profile-badges {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-3);
+            flex-wrap: wrap;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-6);
+            margin-top: var(--space-8);
+        }
+
+        .profile-section {
+            padding: var(--space-6);
+        }
+
+        .profile-section h3 {
+            margin-bottom: var(--space-6);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-4);
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: var(--space-4);
+            background: var(--glass-bg);
+            border-radius: var(--radius-lg);
+            transition: all 0.2s;
+        }
+
+        .stat-item:hover {
+            background: var(--glass-bg-hover);
+            transform: translateY(-2px);
+        }
+
+        .stat-item-value {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-item-label {
+            font-size: var(--text-sm);
+            color: var(--text-muted);
+            margin-top: var(--space-1);
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-4);
+        }
+
+        .achievement {
+            text-align: center;
+            padding: var(--space-4);
+            background: var(--glass-bg);
+            border-radius: var(--radius-lg);
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .achievement:hover {
+            background: var(--glass-bg-hover);
+            transform: translateY(-2px);
+        }
+
+        .achievement.locked {
+            opacity: 0.35;
+            filter: grayscale(0.5);
+        }
+
+        .achievement.unlocked {
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.1);
+        }
+
+        .achievement-icon {
+            font-size: 2rem;
+            margin-bottom: var(--space-2);
+        }
+
+        .achievement-name {
+            font-size: var(--text-xs);
+            color: var(--text-secondary);
+        }
+
+        .achievement-check {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 10px;
+        }
+
+        .settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-4);
+            background: var(--glass-bg);
+            border-radius: var(--radius-lg);
+            transition: all 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .settings-item:hover {
+            background: var(--glass-bg-hover);
+        }
+
+        .settings-item-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .settings-item-icon {
+            font-size: 1.25rem;
+        }
+
+        .settings-item-label {
+            font-weight: var(--font-medium);
+        }
+
+        .toggle {
+            width: 48px;
+            height: 24px;
+            background: var(--glass-border);
+            border-radius: var(--radius-full);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toggle.active {
+            background: var(--accent-primary);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.2s;
+        }
+
+        .toggle.active::after {
+            left: 26px;
+        }
+
+        .xp-bar {
+            margin-top: var(--space-4);
+        }
+
+        .xp-bar-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--space-2);
+            font-size: var(--text-sm);
+        }
+
+        .xp-bar-label {
+            color: var(--text-muted);
+        }
+
+        .xp-bar-value {
+            font-weight: var(--font-semibold);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal {
+            background: var(--bg-secondary, #1a1a2e);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 28px;
+            width: 420px;
+            max-width: 90vw;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal .input-group {
+            margin-bottom: 16px;
+        }
+
+        .modal .input-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .modal .input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .modal .btn-cancel {
+            padding: 8px 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .modal .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal .btn-save {
+            padding: 8px 18px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .modal .btn-save:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .modal .msg {
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .modal .msg.success {
+            display: block;
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .modal .msg.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* Danger zone */
+        .danger-item {
+            border: 1px solid rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .danger-item:hover {
+            border-color: rgba(239, 68, 68, 0.4) !important;
+            background: rgba(239, 68, 68, 0.05) !important;
+        }
+
+        @media (max-width: 768px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .achievements-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <!-- Navigation -->
+        <nav class="nav" id="navbar">
+            <div class="nav-container">
+                <a href="index.html" class="nav-logo">
+                    <div class="nav-logo-icon">🎓</div>
+                    <span class="nav-logo-text">FluentAI</span>
+                </a>
+
+                <div class="nav-links">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="practice.html" class="nav-link">Practice</a>
+                    <a href="challenges.html" class="nav-link">Challenges</a>
+                    <a href="writing.html" class="nav-link">Writing</a>
+                </div>
+
+                <div class="nav-actions">
+                    <button class="btn btn-ghost" id="logoutBtn">Log Out</button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="page-content">
+            <div class="container">
+                <!-- Profile Header -->
+                <div class="profile-header animate-fade-in-down">
+                    <div class="profile-avatar-wrapper">
+                        <div class="profile-avatar" id="profileAvatar">?</div>
+                        <div class="profile-avatar-edit" id="editAvatarBtn" title="Edit profile">✏️</div>
+                    </div>
+                    <h1 class="profile-name" id="profileName">Loading...</h1>
+                    <p class="profile-email" id="profileEmail"></p>
+                    <p class="profile-joined" id="profileJoined"></p>
+                    <div class="profile-badges">
+                        <span class="badge badge-primary" id="levelBadge">⭐ Beginner</span>
+                        <span class="badge badge-success" id="streakBadge">🔥 0 Day Streak</span>
+                        <span class="badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;"
+                            id="providerBadge">📧 Email</span>
+                    </div>
+
+                    <div class="xp-bar" style="max-width: 400px; margin: var(--space-6) auto 0;">
+                        <div class="xp-bar-header">
+                            <span class="xp-bar-label">Progress to next level</span>
+                            <span class="xp-bar-value" id="xpValue">0 / 500 XP</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" id="xpFill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Grid -->
+                <div class="profile-grid">
+                    <!-- Stats Section -->
+                    <div class="glass-card-static profile-section animate-fade-in-up">
+                        <h3>📊 Statistics</h3>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-item-value" id="statWords">0</div>
+                                <div class="stat-item-label">Words Spoken</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-item-value" id="statSessions">0</div>
+                                <div class="stat-item-label">Sessions</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-item-value" id="statMinutes">0</div>
+                                <div class="stat-item-label">Minutes</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-item-value" id="statXP">0</div>
+                                <div class="stat-item-label">Total XP</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-item-value" id="statWritings">0</div>
+                                <div class="stat-item-label">Writings</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-item-value" id="statChallenges">0</div>
+                                <div class="stat-item-label">Challenges</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Achievements Section -->
+                    <div class="glass-card-static profile-section animate-fade-in-up">
+                        <h3>🏆 Achievements <span
+                                style="font-size:12px;color:var(--text-muted);font-weight:400;margin-left:auto;"
+                                id="achCount">0/8 unlocked</span></h3>
+                        <div class="achievements-grid" id="achievementsGrid">
+                            <!-- Dynamically rendered -->
+                        </div>
+                    </div>
+
+                    <!-- Settings Section -->
+                    <div class="glass-card-static profile-section animate-fade-in-up">
+                        <h3>⚙️ Settings</h3>
+                        <div class="settings-list">
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <span class="settings-item-icon">🔔</span>
+                                    <span class="settings-item-label">Notifications</span>
+                                </div>
+                                <div class="toggle active" data-setting="notifications"></div>
+                            </div>
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <span class="settings-item-icon">🔊</span>
+                                    <span class="settings-item-label">Sound Effects</span>
+                                </div>
+                                <div class="toggle active" data-setting="sounds"></div>
+                            </div>
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <span class="settings-item-icon">🌙</span>
+                                    <span class="settings-item-label">Dark Mode</span>
+                                </div>
+                                <div class="toggle active" data-setting="darkmode"></div>
+                            </div>
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <span class="settings-item-icon">📧</span>
+                                    <span class="settings-item-label">Email Updates</span>
+                                </div>
+                                <div class="toggle" data-setting="emails"></div>
+                            </div>
+                            <div class="settings-item">
+                                <div class="settings-item-left">
+                                    <span class="settings-item-icon">🗣️</span>
+                                    <span class="settings-item-label">AI Voice</span>
+                                </div>
+                                <select id="voiceSelect"
+                                    style="background:var(--glass-bg);border:1px solid rgba(255,255,255,0.1);color:white;padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer;">
+                                    <option value="en-US-JennyNeural">Jenny (US)</option>
+                                    <option value="en-US-GuyNeural">Guy (US)</option>
+                                    <option value="en-GB-SoniaNeural">Sonia (UK)</option>
+                                    <option value="en-AU-NatashaNeural">Natasha (AU)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Section -->
+                    <div class="glass-card-static profile-section animate-fade-in-up">
+                        <h3>👤 Account</h3>
+                        <div class="settings-list">
+                            <div class="settings-item" id="editProfileBtn">
+                                <div class="settings-item-left">
+                                    <span class="settings-item-icon">✏️</span>
+                                    <span class="settings-item-label">Edit Profile</span>
+                                </div>
+                                <span style="color: var(--text-muted);">→</span>
+                            </div>
+                            <div class="settings-item" id="changePasswordBtn">
+                                <div class="settings-item-left">
+                                    <span class="settings-item-icon">🔒</span>
+                                    <span class="settings-item-label">Change Password</span>
+                                </div>
+                                <span style="color: var(--text-muted);">→</span>
+                            </div>
+                            <div class="settings-item" id="exportDataBtn">
+                                <div class="settings-item-left">
+                                    <span class="settings-item-icon">📦</span>
+                                    <span class="settings-item-label">Export My Data</span>
+                                </div>
+                                <span style="color: var(--text-muted);">→</span>
+                            </div>
+                            <div class="settings-item" id="resetProgressBtn">
+                                <div class="settings-item-left">
+                                    <span class="settings-item-icon">🔄</span>
+                                    <span class="settings-item-label">Reset Progress</span>
+                                </div>
+                                <span style="color: var(--text-muted);">→</span>
+                            </div>
+                            <div class="settings-item danger-item" id="deleteAccountBtn">
+                                <div class="settings-item-left">
+                                    <span class="settings-item-icon">🗑️</span>
+                                    <span class="settings-item-label" style="color: #f87171;">Delete Account</span>
+                                </div>
+                                <span style="color: #f87171;">→</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal-overlay" id="editProfileModal">
+        <div class="modal">
+            <h3>✏️ Edit Profile</h3>
+            <div class="input-group">
+                <label>Full Name</label>
+                <input type="text" class="input" id="editName" placeholder="Your name">
+            </div>
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" class="input" id="editEmail" placeholder="you@example.com">
+            </div>
+            <div class="msg" id="editMsg"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('editProfileModal')">Cancel</button>
+                <button class="btn-save" id="saveProfileBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal-overlay" id="changePasswordModal">
+        <div class="modal">
+            <h3>🔒 Change Password</h3>
+            <div class="input-group">
+                <label>Current Password</label>
+                <input type="password" class="input" id="currentPassword" placeholder="••••••••">
+            </div>
+            <div class="input-group">
+                <label>New Password</label>
+                <input type="password" class="input" id="newPassword" placeholder="••••••••" minlength="6">
+            </div>
+            <div class="input-group">
+                <label>Confirm New Password</label>
+                <input type="password" class="input" id="confirmPassword" placeholder="••••••••">
+            </div>
+            <div class="msg" id="passwordMsg"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('changePasswordModal')">Cancel</button>
+                <button class="btn-save" id="savePasswordBtn">Update Password</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check auth
+        const user = JSON.parse(localStorage.getItem('fluentai_user') || 'null');
+        if (!user) {
+            window.location.href = 'login.html';
+        }
+
+        // Load user data
+        if (user) {
+            document.getElementById('profileName').textContent = user.name || 'User';
+            document.getElementById('profileEmail').textContent = user.email || '';
+
+            const avatar = document.getElementById('profileAvatar');
+            if (user.picture) {
+                avatar.innerHTML = `<img src="${user.picture}" alt="">`;
+            } else {
+                avatar.textContent = (user.name || 'U').charAt(0).toUpperCase();
+            }
+
+            // Provider badge
+            const provider = user.provider || 'email';
+            const providerBadge = document.getElementById('providerBadge');
+            if (provider === 'google') {
+                providerBadge.innerHTML = '🔗 Google';
+                providerBadge.style.background = 'rgba(66,133,244,0.15)';
+                providerBadge.style.color = '#60a5fa';
+            } else if (provider === 'guest') {
+                providerBadge.innerHTML = '👤 Guest';
+                providerBadge.style.background = 'rgba(255,255,255,0.05)';
+                providerBadge.style.color = '#9ca3af';
+            } else {
+                providerBadge.innerHTML = '📧 Email';
+            }
+
+            // Joined date
+            const joined = user.createdAt ? new Date(user.createdAt) : new Date();
+            document.getElementById('profileJoined').textContent = `Joined ${joined.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+        }
+
+        // Load progress
+        const progress = JSON.parse(localStorage.getItem('fluentai_progress') || '{}');
+        document.getElementById('statWords').textContent = progress.wordsSpoken || 0;
+        document.getElementById('statSessions').textContent = progress.sessionsCompleted || 0;
+        document.getElementById('statMinutes').textContent = progress.totalMinutes || 0;
+        document.getElementById('statXP').textContent = progress.xp || 0;
+        document.getElementById('statWritings').textContent = progress.writingsCompleted || 0;
+        document.getElementById('statChallenges').textContent = progress.challengesCompleted || 0;
+        document.getElementById('levelBadge').textContent = `⭐ ${progress.level || 'Beginner'}`;
+        document.getElementById('streakBadge').textContent = `🔥 ${progress.streak || 0} Day Streak`;
+
+        // XP progress
+        const xp = progress.xp || 0;
+        const levels = [
+            { name: 'Beginner', min: 0, max: 500 },
+            { name: 'Elementary', min: 500, max: 1500 },
+            { name: 'Intermediate', min: 1500, max: 3000 },
+            { name: 'Advanced', min: 3000, max: 5000 },
+            { name: 'Expert', min: 5000, max: 10000 }
+        ];
+        const currentLevel = levels.find(l => xp >= l.min && xp < l.max) || levels[levels.length - 1];
+        const xpProgress = ((xp - currentLevel.min) / (currentLevel.max - currentLevel.min)) * 100;
+        document.getElementById('xpValue').textContent = `${xp} / ${currentLevel.max} XP`;
+        document.getElementById('xpFill').style.width = `${Math.min(100, xpProgress)}%`;
+
+        // ============================================
+        // ACHIEVEMENTS
+        // ============================================
+        const achievements = [
+            { id: 'first_steps', icon: '🌟', name: 'First Steps', desc: 'Complete your first session', check: () => (progress.sessionsCompleted || 0) >= 1 },
+            { id: 'streak_3', icon: '🔥', name: '3-Day Streak', desc: 'Practice 3 days in a row', check: () => (progress.streak || 0) >= 3 },
+            { id: 'words_100', icon: '💯', name: '100 Words', desc: 'Speak 100 words total', check: () => (progress.wordsSpoken || 0) >= 100 },
+            { id: 'first_essay', icon: '📝', name: 'First Essay', desc: 'Complete a writing test', check: () => (progress.writingsCompleted || 0) >= 1 },
+            { id: 'challenger', icon: '🎯', name: 'Challenger', desc: 'Complete a challenge', check: () => (progress.challengesCompleted || 0) >= 1 },
+            { id: 'xp_500', icon: '⚡', name: '500 XP', desc: 'Earn 500 XP total', check: () => (progress.xp || 0) >= 500 },
+            { id: 'streak_7', icon: '🔥', name: '7-Day Streak', desc: 'Practice 7 days in a row', check: () => (progress.streak || 0) >= 7 },
+            { id: 'champion', icon: '🏆', name: 'Champion', desc: 'Reach 1000 XP', check: () => (progress.xp || 0) >= 1000 }
+        ];
+
+        let unlockedCount = 0;
+        const achGrid = document.getElementById('achievementsGrid');
+        achGrid.innerHTML = achievements.map(ach => {
+            const unlocked = ach.check();
+            if (unlocked) unlockedCount++;
+            return `
+                <div class="achievement ${unlocked ? 'unlocked' : 'locked'}" title="${ach.desc}">
+                    ${unlocked ? '<span class="achievement-check">✅</span>' : ''}
+                    <div class="achievement-icon">${ach.icon}</div>
+                    <div class="achievement-name">${ach.name}</div>
+                </div>`;
+        }).join('');
+        document.getElementById('achCount').textContent = `${unlockedCount}/8 unlocked`;
+
+        // ============================================
+        // SETTINGS
+        // ============================================
+        // Toggle settings
+        document.querySelectorAll('.toggle').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                toggle.classList.toggle('active');
+                const setting = toggle.dataset.setting;
+                const settings = JSON.parse(localStorage.getItem('fluentai_settings') || '{}');
+                settings[setting] = toggle.classList.contains('active');
+                localStorage.setItem('fluentai_settings', JSON.stringify(settings));
+            });
+        });
+
+        // Load settings
+        const settings = JSON.parse(localStorage.getItem('fluentai_settings') || '{}');
+        Object.entries(settings).forEach(([key, value]) => {
+            const toggle = document.querySelector(`[data-setting="${key}"]`);
+            if (toggle) toggle.classList.toggle('active', value);
+        });
+
+        // Voice select
+        const voiceSelect = document.getElementById('voiceSelect');
+        if (settings.voice) voiceSelect.value = settings.voice;
+        voiceSelect.addEventListener('change', () => {
+            const s = JSON.parse(localStorage.getItem('fluentai_settings') || '{}');
+            s.voice = voiceSelect.value;
+            localStorage.setItem('fluentai_settings', JSON.stringify(s));
+        });
+
+        // Scroll navbar
+        window.addEventListener('scroll', () => {
+            document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // ============================================
+        // MODALS
+        // ============================================
+        function openModal(id) {
+            document.getElementById(id).classList.add('show');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.classList.remove('show');
+            });
+        });
+
+        // ============================================
+        // EDIT PROFILE
+        // ============================================
+        document.getElementById('editProfileBtn').addEventListener('click', () => {
+            document.getElementById('editName').value = user.name || '';
+            document.getElementById('editEmail').value = user.email || '';
+            document.getElementById('editMsg').className = 'msg';
+            document.getElementById('editMsg').textContent = '';
+            openModal('editProfileModal');
+        });
+
+        document.getElementById('editAvatarBtn').addEventListener('click', () => {
+            document.getElementById('editName').value = user.name || '';
+            document.getElementById('editEmail').value = user.email || '';
+            document.getElementById('editMsg').className = 'msg';
+            document.getElementById('editMsg').textContent = '';
+            openModal('editProfileModal');
+        });
+
+        document.getElementById('saveProfileBtn').addEventListener('click', () => {
+            const newName = document.getElementById('editName').value.trim();
+            const newEmail = document.getElementById('editEmail').value.trim();
+            const msg = document.getElementById('editMsg');
+
+            if (!newName || newName.length < 2) {
+                msg.className = 'msg error';
+                msg.textContent = 'Name must be at least 2 characters.';
+                return;
+            }
+            if (!newEmail || !newEmail.includes('@') || !newEmail.includes('.')) {
+                msg.className = 'msg error';
+                msg.textContent = 'Please enter a valid email.';
+                return;
+            }
+
+            // Update user
+            user.name = newName;
+            user.email = newEmail;
+            localStorage.setItem('fluentai_user', JSON.stringify(user));
+
+            // Update registered users if exists
+            const regUsers = JSON.parse(localStorage.getItem('fluentai_registered_users') || '[]');
+            const regUser = regUsers.find(u => u.id === user.id);
+            if (regUser) {
+                regUser.name = newName;
+                regUser.email = newEmail;
+                localStorage.setItem('fluentai_registered_users', JSON.stringify(regUsers));
+            }
+
+            // Update UI
+            document.getElementById('profileName').textContent = newName;
+            document.getElementById('profileEmail').textContent = newEmail;
+            document.getElementById('profileAvatar').textContent = newName.charAt(0).toUpperCase();
+
+            msg.className = 'msg success';
+            msg.textContent = '✅ Profile updated successfully!';
+
+            setTimeout(() => closeModal('editProfileModal'), 1000);
+        });
+
+        // ============================================
+        // CHANGE PASSWORD
+        // ============================================
+        document.getElementById('changePasswordBtn').addEventListener('click', () => {
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('passwordMsg').className = 'msg';
+            document.getElementById('passwordMsg').textContent = '';
+            openModal('changePasswordModal');
+        });
+
+        document.getElementById('savePasswordBtn').addEventListener('click', () => {
+            const current = document.getElementById('currentPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            const msg = document.getElementById('passwordMsg');
+
+            // Get registered user
+            const regUsers = JSON.parse(localStorage.getItem('fluentai_registered_users') || '[]');
+            const regUser = regUsers.find(u => u.email === user.email);
+
+            if (regUser && regUser.password !== current) {
+                msg.className = 'msg error';
+                msg.textContent = 'Current password is incorrect.';
+                return;
+            }
+
+            if (newPass.length < 6) {
+                msg.className = 'msg error';
+                msg.textContent = 'New password must be at least 6 characters.';
+                return;
+            }
+
+            if (newPass !== confirm) {
+                msg.className = 'msg error';
+                msg.textContent = 'New passwords do not match.';
+                return;
+            }
+
+            // Update password
+            if (regUser) {
+                regUser.password = newPass;
+                localStorage.setItem('fluentai_registered_users', JSON.stringify(regUsers));
+            }
+
+            msg.className = 'msg success';
+            msg.textContent = '✅ Password changed successfully!';
+
+            setTimeout(() => closeModal('changePasswordModal'), 1000);
+        });
+
+        // ============================================
+        // EXPORT DATA
+        // ============================================
+        document.getElementById('exportDataBtn').addEventListener('click', () => {
+            const data = {
+                user: JSON.parse(localStorage.getItem('fluentai_user') || '{}'),
+                progress: JSON.parse(localStorage.getItem('fluentai_progress') || '{}'),
+                settings: JSON.parse(localStorage.getItem('fluentai_settings') || '{}'),
+                sessions: JSON.parse(localStorage.getItem('fluentai_sessions') || '[]'),
+                activities: JSON.parse(localStorage.getItem('fluentai_activities') || '[]'),
+                exportDate: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fluentai_data_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // ============================================
+        // RESET PROGRESS
+        // ============================================
+        document.getElementById('resetProgressBtn').addEventListener('click', () => {
+            if (confirm('⚠️ This will reset all your learning progress, XP, achievements, and session recordings. This cannot be undone.\n\nAre you sure?')) {
+                localStorage.setItem('fluentai_progress', JSON.stringify({
+                    wordsSpoken: 0, sessionsCompleted: 0, streak: 0,
+                    totalMinutes: 0, level: 'Beginner', xp: 0, achievements: [],
+                    writingsCompleted: 0, challengesCompleted: 0
+                }));
+                localStorage.removeItem('fluentai_sessions');
+                localStorage.removeItem('fluentai_activities');
+                alert('✅ Progress has been reset.');
+                location.reload();
+            }
+        });
+
+        // ============================================
+        // DELETE ACCOUNT
+        // ============================================
+        document.getElementById('deleteAccountBtn').addEventListener('click', () => {
+            if (confirm('⚠️ DELETE ACCOUNT\n\nThis will permanently delete your account and all data. This cannot be undone.\n\nType your email to confirm.')) {
+                const typed = prompt('Enter your email to confirm deletion:');
+                if (typed === user.email) {
+                    // Remove from registered users
+                    const regUsers = JSON.parse(localStorage.getItem('fluentai_registered_users') || '[]');
+                    const filtered = regUsers.filter(u => u.email !== user.email);
+                    localStorage.setItem('fluentai_registered_users', JSON.stringify(filtered));
+
+                    // Clear all user data
+                    localStorage.removeItem('fluentai_user');
+                    localStorage.removeItem('fluentai_progress');
+                    localStorage.removeItem('fluentai_settings');
+                    localStorage.removeItem('fluentai_sessions');
+                    localStorage.removeItem('fluentai_activities');
+
+                    window.location.href = 'index.html';
+                } else if (typed !== null) {
+                    alert('Email does not match. Account not deleted.');
+                }
+            }
+        });
+
+        // ============================================
+        // LOGOUT
+        // ============================================
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('fluentai_user');
+            window.location.href = 'login.html';
+        });
+    </script>
+</body>
+
+</html>

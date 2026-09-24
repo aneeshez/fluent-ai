@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - FluentAI</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout.css">
+
+    <style>
+        .about-hero {
+            text-align: center;
+            padding: var(--space-20) 0;
+            position: relative;
+        }
+
+        .about-hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .about-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .about-section {
+            margin-bottom: var(--space-16);
+        }
+
+        .about-section h2 {
+            font-size: var(--text-3xl);
+            margin-bottom: var(--space-6);
+        }
+
+        .about-section p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: var(--space-4);
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-6);
+            margin: var(--space-12) 0;
+        }
+
+        .about-card {
+            padding: var(--space-8);
+            text-align: center;
+        }
+
+        .about-card-icon {
+            font-size: 3rem;
+            margin-bottom: var(--space-4);
+        }
+
+        .about-card h3 {
+            font-size: var(--text-xl);
+            margin-bottom: var(--space-3);
+        }
+
+        .about-card p {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-6);
+        }
+
+        .team-card {
+            padding: var(--space-6);
+            text-align: center;
+        }
+
+        .team-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto var(--space-4);
+        }
+
+        .team-name {
+            font-weight: var(--font-semibold);
+            margin-bottom: var(--space-1);
+        }
+
+        .team-role {
+            font-size: var(--text-sm);
+            color: var(--text-muted);
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-3);
+            justify-content: center;
+            margin-top: var(--space-6);
+        }
+
+        .tech-badge {
+            padding: var(--space-2) var(--space-4);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-full);
+            font-size: var(--text-sm);
+        }
+
+        @media (max-width: 768px) {
+
+            .about-grid,
+            .team-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <!-- Navigation -->
+        <nav class="nav" id="navbar">
+            <div class="nav-container">
+                <a href="index.html" class="nav-logo">
+                    <div class="nav-logo-icon">🎓</div>
+                    <span class="nav-logo-text">FluentAI</span>
+                </a>
+
+                <div class="nav-links">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="practice.html" class="nav-link">Practice</a>
+                    <a href="challenges.html" class="nav-link">Challenges</a>
+                    <a href="writing.html" class="nav-link">Writing</a>
+                </div>
+
+                <div class="nav-actions">
+                    <a href="login.html" class="btn btn-ghost">Log In</a>
+                    <a href="signup.html" class="btn btn-primary">Get Started</a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="page-content">
+            <!-- Hero -->
+            <section class="about-hero">
+                <div class="container">
+                    <span class="section-badge">About Us</span>
+                    <h1 class="hero-title animate-fade-in-up">
+                        Revolutionizing <span class="text-gradient">Language Learning</span>
+                    </h1>
+                    <p class="hero-subtitle animate-fade-in-up">
+                        We're on a mission to make English learning accessible, effective, and enjoyable for everyone
+                        through the power of AI.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Mission -->
+            <section class="section">
+                <div class="container about-content">
+                    <div class="about-section animate-fade-in-up">
+                        <h2>🎯 Our Mission</h2>
+                        <p>
+                            FluentAI was born from a simple observation: traditional language learning methods often
+                            focus on memorization rather than real communication skills. We believe that the best way to
+                            learn a language is by using it in real conversations.
+                        </p>
+                        <p>
+                            Our AI-powered platform provides instant, personalized feedback that helps you improve
+                            faster than ever. Whether you're preparing for an exam, advancing your career, or simply
+                            wanting to communicate better, FluentAI is here to help.
+                        </p>
+                    </div>
+
+                    <div class="about-grid stagger">
+                        <div class="glass-card about-card animate-fade-in-up">
+                            <div class="about-card-icon">🤖</div>
+                            <h3>AI-Powered</h3>
+                            <p>Advanced AI understands context, grammar, and natural speech patterns to provide accurate
+                                feedback.</p>
+                        </div>
+
+                        <div class="glass-card about-card animate-fade-in-up">
+                            <div class="about-card-icon">⚡</div>
+                            <h3>Real-Time</h3>
+                            <p>Get instant corrections and suggestions as you speak or write, maximizing your learning
+                                efficiency.</p>
+                        </div>
+
+                        <div class="glass-card about-card animate-fade-in-up">
+                            <div class="about-card-icon">🎓</div>
+                            <h3>Personalized</h3>
+                            <p>Adaptive learning that focuses on your weaknesses and builds on your strengths.</p>
+                        </div>
+                    </div>
+
+                    <div class="about-section animate-fade-in-up">
+                        <h2>💡 How It Works</h2>
+                        <p>
+                            FluentAI uses a combination of speech recognition, natural language processing, and large
+                            language models to analyze your English in real-time. Our system evaluates grammar,
+                            vocabulary, pronunciation, fluency, and coherence to provide comprehensive feedback.
+                        </p>
+                        <p>
+                            The platform includes speaking practice with an AI tutor, writing tests with detailed
+                            analysis, and gamified challenges to keep you motivated. Everything is designed to simulate
+                            real-world English usage while providing the guidance you need to improve.
+                        </p>
+                    </div>
+
+                    <div class="about-section animate-fade-in-up">
+                        <h2>🛠️ Technology</h2>
+                        <p>
+                            Built with cutting-edge technologies to ensure the best user experience and learning
+                            outcomes.
+                        </p>
+                        <div class="tech-stack">
+                            <span class="tech-badge">OpenAI Whisper</span>
+                            <span class="tech-badge">Ollama LLM</span>
+                            <span class="tech-badge">Web Speech API</span>
+                            <span class="tech-badge">Flask</span>
+                            <span class="tech-badge">Socket.IO</span>
+                            <span class="tech-badge">Python</span>
+                            <span class="tech-badge">JavaScript</span>
+                        </div>
+                    </div>
+
+                    <div class="about-section animate-fade-in-up">
+                        <h2>📧 Contact Us</h2>
+                        <p>
+                            Have questions, feedback, or suggestions? We'd love to hear from you!
+                        </p>
+                        <div style="display: flex; gap: var(--space-4); margin-top: var(--space-6); flex-wrap: wrap;">
+                            <a href="mailto:hello@fluentai.com" class="btn btn-primary">
+                                📧 Email Us
+                            </a>
+                            <a href="#" class="btn btn-secondary">
+                                💬 Live Chat
+                            </a>
+                            <a href="#" class="btn btn-secondary">
+                                📱 Twitter
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CTA -->
+            <section class="cta-section" style="background: var(--bg-secondary);">
+                <div class="container">
+                    <div class="glass-card"
+                        style="padding: var(--space-12); text-align: center; max-width: 600px; margin: 0 auto;">
+                        <h2 style="font-size: var(--text-3xl); margin-bottom: var(--space-4);">
+                            Ready to Start Learning?
+                        </h2>
+                        <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">
+                            Join thousands of learners improving their English with FluentAI.
+                        </p>
+                        <a href="signup.html" class="btn btn-primary btn-lg">
+                            Get Started Free →
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-container">
+                <div class="footer-grid">
+                    <div class="footer-brand">
+                        <div class="footer-logo">
+                            <div class="nav-logo-icon">🎓</div>
+                            <span>FluentAI</span>
+                        </div>
+                        <p class="footer-description">
+                            AI-powered English learning platform. Improve your speaking and writing with real-time
+                            feedback.
+                        </p>
+                    </div>
+
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <div class="footer-links">
+                            <a href="practice.html" class="footer-link">Speaking Practice</a>
+                            <a href="writing.html" class="footer-link">Writing Tests</a>
+                            <a href="challenges.html" class="footer-link">Challenges</a>
+                        </div>
+                    </div>
+
+                    <div class="footer-column">
+                        <h4>Company</h4>
+                        <div class="footer-links">
+                            <a href="about.html" class="footer-link">About Us</a>
+                            <a href="#" class="footer-link">Blog</a>
+                            <a href="#" class="footer-link">Contact</a>
+                        </div>
+                    </div>
+
+                    <div class="footer-column">
+                        <h4>Legal</h4>
+                        <div class="footer-links">
+                            <a href="#" class="footer-link">Privacy Policy</a>
+                            <a href="#" class="footer-link">Terms of Service</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-bottom">
+                    <p class="footer-copyright">© 2024 FluentAI. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Navigation scroll effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+
+</html>

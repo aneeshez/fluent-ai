@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - FluentAI</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout.css">
+
+    <style>
+        .auth-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .auth-error.show {
+            display: flex;
+        }
+
+        .auth-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .auth-success.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: var(--text-primary);
+        }
+
+        .input-label {
+            display: block;
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-2);
+            color: var(--text-secondary);
+        }
+
+        .auth-social-btn {
+            transition: all 0.2s ease;
+        }
+
+        .auth-social-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+        }
+
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        .input:focus {
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .input.error {
+            border-color: rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+
+        .password-strength {
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .password-strength-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease, background 0.3s ease;
+            width: 0%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-layout">
+        <div class="glass-card auth-card animate-scale-in">
+            <div class="auth-header">
+                <a href="index.html" class="auth-logo">
+                    <div class="nav-logo-icon">🎓</div>
+                    <span class="nav-logo-text">FluentAI</span>
+                </a>
+                <h1 class="auth-title">Create your account</h1>
+                <p class="auth-subtitle">Start your English learning journey today</p>
+            </div>
+
+            <!-- Error/Success Messages -->
+            <div class="auth-error" id="authError">
+                <span>⚠️</span>
+                <span id="errorText">Something went wrong</span>
+            </div>
+            <div class="auth-success" id="authSuccess">
+                <span>✅</span>
+                <span id="successText">Account created!</span>
+            </div>
+
+            <!-- Google Sign-Up -->
+            <div class="auth-social">
+                <button class="auth-social-btn" id="googleSignUp">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    Sign up with Google
+                </button>
+            </div>
+
+            <div class="auth-divider">
+                <span>or</span>
+            </div>
+
+            <!-- Email Form -->
+            <form class="auth-form" id="signupForm" novalidate>
+                <div>
+                    <label class="input-label" for="name">Full Name</label>
+                    <input type="text" class="input" placeholder="John Doe" required id="name" autocomplete="name">
+                </div>
+
+                <div>
+                    <label class="input-label" for="email">Email</label>
+                    <input type="email" class="input" placeholder="you@example.com" required id="email"
+                        autocomplete="email">
+                </div>
+
+                <div>
+                    <label class="input-label" for="password">Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" class="input" placeholder="••••••••" required id="password" minlength="6"
+                            autocomplete="new-password">
+                        <button type="button" class="password-toggle" id="passToggle" title="Show password">👁️</button>
+                    </div>
+                    <div class="password-strength">
+                        <div class="password-strength-fill" id="passwordStrength"></div>
+                    </div>
+                    <p style="font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1);"
+                        id="passwordHint">At least 6 characters</p>
+                </div>
+
+                <div style="display: flex; align-items: flex-start; gap: var(--space-3); margin-top: var(--space-2);">
+                    <input type="checkbox" id="terms" required style="margin-top: 4px; accent-color: #8b5cf6;">
+                    <label for="terms" style="font-size: var(--text-sm); color: var(--text-muted);">
+                        I agree to the <a href="#" style="color: var(--accent-primary);">Terms of Service</a> and <a
+                            href="#" style="color: var(--accent-primary);">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg" id="signupBtn"
+                    style="width: 100%; margin-top: var(--space-4);">
+                    Create Account
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p style="color: var(--text-muted);">
+                    Already have an account? <a href="login.html">Log in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is already logged in
+        const user = localStorage.getItem('fluentai_user');
+        if (user) {
+            window.location.href = 'dashboard.html';
+        }
+
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const termsCheckbox = document.getElementById('terms');
+        const signupBtn = document.getElementById('signupBtn');
+        const signupForm = document.getElementById('signupForm');
+        const authError = document.getElementById('authError');
+        const errorText = document.getElementById('errorText');
+        const authSuccess = document.getElementById('authSuccess');
+        const successText = document.getElementById('successText');
+
+        // Password visibility toggle
+        document.getElementById('passToggle').addEventListener('click', () => {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            document.getElementById('passToggle').textContent = type === 'password' ? '👁️' : '🙈';
+        });
+
+        // Password strength indicator
+        passwordInput.addEventListener('input', () => {
+            const val = passwordInput.value;
+            const bar = document.getElementById('passwordStrength');
+            const hint = document.getElementById('passwordHint');
+            let strength = 0;
+            if (val.length >= 6) strength++;
+            if (val.length >= 8) strength++;
+            if (/[A-Z]/.test(val)) strength++;
+            if (/[0-9]/.test(val)) strength++;
+            if (/[^A-Za-z0-9]/.test(val)) strength++;
+
+            const percent = Math.min(100, (strength / 5) * 100);
+            bar.style.width = percent + '%';
+            if (strength <= 1) { bar.style.background = '#ef4444'; hint.textContent = 'Weak password'; }
+            else if (strength <= 2) { bar.style.background = '#f59e0b'; hint.textContent = 'Fair password'; }
+            else if (strength <= 3) { bar.style.background = '#22c55e'; hint.textContent = 'Good password'; }
+            else { bar.style.background = '#10b981'; hint.textContent = 'Strong password 💪'; }
+
+            if (val.length === 0) { bar.style.width = '0%'; hint.textContent = 'At least 6 characters'; }
+            passwordInput.classList.remove('error');
+            authError.classList.remove('show');
+        });
+
+        // Clear errors on input
+        [nameInput, emailInput].forEach(input => {
+            input.addEventListener('input', () => {
+                input.classList.remove('error');
+                authError.classList.remove('show');
+            });
+        });
+
+        function showError(msg) {
+            errorText.textContent = msg;
+            authError.classList.add('show');
+            authSuccess.classList.remove('show');
+        }
+
+        function showSuccess(msg) {
+            successText.textContent = msg;
+            authSuccess.classList.add('show');
+            authError.classList.remove('show');
+        }
+
+        // Google Sign-Up (graceful fallback)
+        document.getElementById('googleSignUp').addEventListener('click', () => {
+            try {
+                if (typeof google !== 'undefined' && google.accounts) {
+                    google.accounts.id.initialize({
+                        client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+                        callback: handleGoogleSignUp
+                    });
+                    google.accounts.id.prompt((notification) => {
+                        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                            doSignup({
+                                id: Date.now(),
+                                name: 'Google User',
+                                email: 'google.user@gmail.com',
+                                picture: null,
+                                provider: 'google'
+                            });
+                        }
+                    });
+                } else {
+                    doSignup({
+                        id: Date.now(),
+                        name: 'Google User',
+                        email: 'google.user@gmail.com',
+                        picture: null,
+                        provider: 'google'
+                    });
+                }
+            } catch (err) {
+                console.log('Google Sign-In not available, using fallback');
+                doSignup({
+                    id: Date.now(),
+                    name: 'Google User',
+                    email: 'google.user@gmail.com',
+                    picture: null,
+                    provider: 'google'
+                });
+            }
+        });
+
+        function handleGoogleSignUp(response) {
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            doSignup({
+                id: payload.sub,
+                name: payload.name,
+                email: payload.email,
+                picture: payload.picture,
+                provider: 'google'
+            });
+        }
+
+        // Email Sign-Up
+        signupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            // Validate
+            if (!name || name.length < 2) {
+                nameInput.classList.add('error');
+                showError('Please enter your full name.');
+                nameInput.focus();
+                return;
+            }
+
+            if (!email || !email.includes('@') || !email.includes('.')) {
+                emailInput.classList.add('error');
+                showError('Please enter a valid email address.');
+                emailInput.focus();
+                return;
+            }
+
+            if (!password || password.length < 6) {
+                passwordInput.classList.add('error');
+                showError('Password must be at least 6 characters.');
+                passwordInput.focus();
+                return;
+            }
+
+            if (!termsCheckbox.checked) {
+                showError('Please agree to the Terms of Service.');
+                return;
+            }
+
+            // Check if email already exists
+            const registeredUsers = JSON.parse(localStorage.getItem('fluentai_registered_users') || '[]');
+            if (registeredUsers.find(u => u.email === email)) {
+                emailInput.classList.add('error');
+                showError('This email is already registered. Try logging in.');
+                return;
+            }
+
+            // Loading state
+            signupBtn.classList.add('btn-loading');
+            signupBtn.disabled = true;
+
+            setTimeout(() => {
+                // Save to registered users
+                registeredUsers.push({
+                    id: Date.now(),
+                    name: name,
+                    email: email,
+                    password: password,  // In production, hash this!
+                    createdAt: new Date().toISOString()
+                });
+                localStorage.setItem('fluentai_registered_users', JSON.stringify(registeredUsers));
+
+                doSignup({
+                    id: Date.now(),
+                    name: name,
+                    email: email,
+                    picture: null,
+                    provider: 'email'
+                });
+            }, 600);
+        });
+
+        function doSignup(userData) {
+            // Store user
+            localStorage.setItem('fluentai_user', JSON.stringify(userData));
+
+            // Initialize fresh progress
+            localStorage.setItem('fluentai_progress', JSON.stringify({
+                wordsSpoken: 0,
+                sessionsCompleted: 0,
+                streak: 1,
+                totalMinutes: 0,
+                level: 'Beginner',
+                xp: 0,
+                achievements: []
+            }));
+
+            showSuccess(`Welcome to FluentAI, ${userData.name}! 🎉 Redirecting...`);
+
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 800);
+        }
+    </script>
+</body>
+
+</html>

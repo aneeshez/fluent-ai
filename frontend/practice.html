@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speaking Practice - FluentAI</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout.css">
+
+    <style>
+        .practice-container {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: var(--space-6);
+            min-height: calc(100vh - 150px);
+        }
+
+        .video-section {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-4);
+            flex: 1;
+        }
+
+        .video-card {
+            position: relative;
+            min-height: 350px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+        }
+
+        .video-card video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-label {
+            position: absolute;
+            bottom: var(--space-4);
+            left: var(--space-4);
+            padding: var(--space-2) var(--space-4);
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: var(--radius-md);
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+        }
+
+        .ai-avatar {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .simli-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .avatar-fallback {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-avatar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
+        }
+
+        .avatar-character {
+            position: relative;
+            width: 200px;
+            height: 260px;
+        }
+
+        /* Head */
+        .avatar-head {
+            position: absolute;
+            width: 100px;
+            height: 110px;
+            background: linear-gradient(180deg, #fce7d6 0%, #f5d0b9 100%);
+            border-radius: 50% 50% 45% 45%;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Hair */
+        .avatar-hair {
+            position: absolute;
+            width: 120px;
+            height: 80px;
+            background: linear-gradient(180deg, #2d1b12 0%, #1a0f0a 100%);
+            border-radius: 60% 60% 0 0;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .avatar-hair-side-left,
+        .avatar-hair-side-right {
+            position: absolute;
+            width: 30px;
+            height: 130px;
+            background: linear-gradient(180deg, #2d1b12 0%, #1a0f0a 100%);
+            top: 30px;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .avatar-hair-side-left {
+            left: 30px;
+        }
+
+        .avatar-hair-side-right {
+            right: 30px;
+        }
+
+        /* Eyes */
+        .avatar-eyes {
+            position: absolute;
+            top: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 25px;
+        }
+
+        .avatar-eye {
+            width: 14px;
+            height: 14px;
+            background: #2d1b12;
+            border-radius: 50%;
+            position: relative;
+            animation: blink 4s ease-in-out infinite;
+        }
+
+        .avatar-eye::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+        }
+
+        @keyframes blink {
+
+            0%,
+            45%,
+            55%,
+            100% {
+                transform: scaleY(1);
+            }
+
+            50% {
+                transform: scaleY(0.1);
+            }
+        }
+
+        /* Eyebrows */
+        .avatar-eyebrows {
+            position: absolute;
+            top: 38px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 30px;
+        }
+
+        .avatar-eyebrow {
+            width: 18px;
+            height: 3px;
+            background: #2d1b12;
+            border-radius: 2px;
+        }
+
+        /* Mouth */
+        .avatar-mouth {
+            position: absolute;
+            top: 78px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 8px;
+            background: #c97b6b;
+            border-radius: 0 0 10px 10px;
+            transition: all 0.1s ease;
+        }
+
+        .avatar-mouth.speaking {
+            animation: speak 0.15s ease-in-out infinite alternate;
+        }
+
+        @keyframes speak {
+            0% {
+                height: 6px;
+                width: 18px;
+                border-radius: 0 0 9px 9px;
+            }
+
+            50% {
+                height: 14px;
+                width: 22px;
+                border-radius: 50%;
+            }
+
+            100% {
+                height: 10px;
+                width: 16px;
+                border-radius: 0 0 8px 8px;
+            }
+        }
+
+        /* Smile when listening */
+        .avatar-mouth.listening {
+            height: 4px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        /* Body */
+        .avatar-body {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 150px;
+        }
+
+        .avatar-neck {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 35px;
+            height: 25px;
+            background: linear-gradient(180deg, #f5d0b9 0%, #f0c5a8 100%);
+        }
+
+        .avatar-torso {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 130px;
+            background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+            border-radius: 40% 40% 0 0;
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .avatar-collar {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 15px;
+            background: white;
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+        }
+
+        /* Subtle body movement when speaking */
+        .avatar-character.speaking {
+            animation: gentle-move 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes gentle-move {
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(-3px);
+            }
+        }
+
+        .ai-avatar-name {
+            margin-top: var(--space-3);
+            font-weight: var(--font-semibold);
+            font-size: var(--text-lg);
+            z-index: 1;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-4);
+            padding: var(--space-4);
+        }
+
+        .control-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all var(--transition-base);
+        }
+
+        .control-btn.primary {
+            background: var(--gradient-primary);
+            box-shadow: var(--shadow-glow-sm);
+        }
+
+        .control-btn.primary:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .control-btn.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .control-btn.secondary {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+        }
+
+        .control-btn.secondary:hover {
+            background: var(--glass-bg-hover);
+        }
+
+        .control-btn.active {
+            background: var(--accent-danger);
+        }
+
+        .transcript-panel {
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 150px);
+            height: calc(100vh - 150px);
+            position: sticky;
+            top: 100px;
+        }
+
+        .transcript-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-4) var(--space-6);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .transcript-content {
+            flex: 1;
+            padding: var(--space-4);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+            min-height: 0;
+        }
+
+        .transcript-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .transcript-empty-icon {
+            font-size: 3rem;
+            margin-bottom: var(--space-4);
+            opacity: 0.5;
+        }
+
+        .message {
+            padding: var(--space-4);
+            border-radius: var(--radius-lg);
+            max-width: 85%;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        .message.user {
+            background: var(--gradient-primary);
+            align-self: flex-end;
+        }
+
+        .message.ai {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            align-self: flex-start;
+        }
+
+        .message.interim {
+            opacity: 0.6;
+            font-style: italic;
+        }
+
+        .feedback-section {
+            padding: var(--space-4) var(--space-6);
+            border-top: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+        }
+
+        .feedback-item {
+            margin-bottom: var(--space-4);
+        }
+
+        .feedback-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .feedback-label {
+            font-size: var(--text-xs);
+            font-weight: var(--font-semibold);
+            color: var(--accent-primary);
+            margin-bottom: var(--space-2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .feedback-text {
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-4);
+            padding: var(--space-3);
+            background: var(--glass-bg);
+            border-radius: var(--radius-lg);
+            font-size: var(--text-sm);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-dot.connected {
+            background: var(--accent-success);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot.disconnected {
+            background: var(--accent-danger);
+        }
+
+        .status-dot.recording {
+            background: var(--accent-danger);
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        /* Mirror local video for selfie view */
+        #localVideo {
+            transform: scaleX(-1);
+            -webkit-transform: scaleX(-1);
+        }
+
+        @media (max-width: 1024px) {
+            .practice-container {
+                grid-template-columns: 1fr;
+            }
+
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Confidence Meter */
+        .confidence-meter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .confidence-gauge {
+            position: relative;
+            width: 36px;
+            height: 36px;
+        }
+
+        .confidence-gauge svg {
+            width: 36px;
+            height: 36px;
+            transform: rotate(-90deg);
+        }
+
+        .confidence-gauge .gauge-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 3;
+        }
+
+        .confidence-gauge .gauge-fill {
+            fill: none;
+            stroke: #34d399;
+            stroke-width: 3;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.6s ease, stroke 0.4s ease;
+        }
+
+        .confidence-gauge .gauge-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            font-weight: 700;
+            color: #34d399;
+            transition: color 0.4s ease;
+        }
+
+        .confidence-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #34d399;
+            transition: color 0.4s ease;
+            white-space: nowrap;
+        }
+
+        .confidence-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 15, 30, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            min-width: 200px;
+            z-index: 100;
+            margin-bottom: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .confidence-meter:hover .confidence-tooltip {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .confidence-tooltip h4 {
+            font-size: 12px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .ct-signal {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 4px;
+            font-size: 11px;
+        }
+
+        .ct-signal-name {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .ct-signal-bar {
+            flex: 1;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .ct-signal-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.5s ease, background 0.3s ease;
+        }
+
+        .ct-signal-value {
+            color: rgba(255, 255, 255, 0.8);
+            min-width: 28px;
+            text-align: right;
+            font-weight: 600;
+        }
+
+        /* Confidence panel — overlay on user video */
+        .confidence-panel {
+            display: none;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 80%, transparent 100%);
+            border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+            padding: 30px 10px 8px 10px;
+            z-index: 20;
+        }
+
+        .confidence-panel.show {
+            display: block;
+        }
+
+        .cp-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .cp-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: #a78bfa;
+        }
+
+        .cp-score-big {
+            font-size: 16px;
+            font-weight: 800;
+            transition: color 0.4s ease;
+        }
+
+        .cp-level {
+            font-size: 9px;
+            font-weight: 500;
+            margin-top: 1px;
+            transition: color 0.4s ease;
+        }
+
+        .cp-signals {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .cp-signal-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+        }
+
+        .cp-signal-icon {
+            font-size: 9px;
+            width: 14px;
+            text-align: center;
+        }
+
+        .cp-signal-name {
+            color: rgba(255, 255, 255, 0.5);
+            width: 50px;
+        }
+
+        .cp-signal-bar {
+            flex: 1;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .cp-signal-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .cp-signal-pct {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            min-width: 30px;
+            text-align: right;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+
+            50% {
+                transform: translateY(-8px);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <!-- Navigation -->
+        <nav class="nav" id="navbar">
+            <div class="nav-container">
+                <a href="index.html" class="nav-logo">
+                    <div class="nav-logo-icon">🎓</div>
+                    <span class="nav-logo-text">FluentAI</span>
+                </a>
+
+                <div class="nav-links">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="practice.html" class="nav-link active">Practice</a>
+                    <a href="challenges.html" class="nav-link">Challenges</a>
+                    <a href="writing.html" class="nav-link">Writing</a>
+                </div>
+
+                <div class="nav-actions">
+                    <div class="nav-user" id="navUser">
+                        <div class="avatar" id="userAvatar">?</div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="page-content">
+            <div class="container" style="padding-top: var(--space-6); padding-bottom: var(--space-6);">
+                <div class="practice-container">
+                    <!-- Video Section -->
+                    <div class="video-section">
+                        <div class="video-grid">
+                            <!-- User Video -->
+                            <div class="glass-card video-card" style="position:relative;">
+                                <video id="localVideo" autoplay playsinline muted></video>
+                                <div class="video-label">You</div>
+                                <!-- Confidence Panel (overlays user video) -->
+                                <div class="confidence-panel" id="confidencePanel">
+                                    <div class="cp-header">
+                                        <span class="cp-title">🎯 Confidence</span>
+                                        <div style="text-align:right;">
+                                            <div class="cp-score-big" id="cpScore" style="color:#34d399;">50</div>
+                                            <div class="cp-level" id="cpLevel" style="color:#34d399;">Steady</div>
+                                        </div>
+                                    </div>
+                                    <div class="cp-signals" id="cpSignals"></div>
+                                </div>
+                            </div>
+
+                            <!-- AI Tutor - Luna (Simli Live Avatar) -->
+                            <div class="glass-card video-card">
+                                <div class="ai-avatar" id="aiAvatarContainer"
+                                    style="position:relative; overflow:hidden;">
+                                    <!-- Simli Live Video (fills entire box) -->
+                                    <video id="simliVideo" autoplay playsinline
+                                        style="display:none; width:100%; height:100%; object-fit:cover; border-radius:var(--radius-xl); position:absolute; top:0; left:0; z-index:10;"></video>
+                                    <audio id="simliAudio" autoplay></audio>
+
+                                    <!-- Fallback / Loading State -->
+                                    <div class="avatar-fallback" id="avatarFallback"
+                                        style="display:flex; width:100%; height:100%; min-height:280px; background:linear-gradient(135deg, #0f0a1e, #1a1035); border-radius:16px; overflow:hidden; align-items:center; justify-content:center; flex-direction:column;">
+                                        <div
+                                            style="width:80px; height:80px; border-radius:50%; background:conic-gradient(from 0deg, #8b5cf6, #6366f1, #818cf8, #a78bfa, #8b5cf6); padding:3px; animation: spin 3s linear infinite;">
+                                            <div
+                                                style="width:100%; height:100%; border-radius:50%; background:#1a1035; display:flex; align-items:center; justify-content:center;">
+                                                <img src="images/luna-human.png" alt="Luna"
+                                                    style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                                            </div>
+                                        </div>
+                                        <div style="color:rgba(255,255,255,0.6); font-size:13px; margin-top:12px;"
+                                            id="simliStatus">Connecting to AI avatar...</div>
+                                    </div>
+
+                                    <div class="ai-avatar-name">Luna</div>
+                                    <div id="aiStatus"
+                                        style="font-size: var(--text-sm); color: var(--text-muted); margin-top: var(--space-1); z-index: 1;">
+                                        AI Communication Tutor</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status Bar -->
+                        <div class="status-bar">
+                            <div class="status-indicator">
+                                <span class="status-dot" id="connectionDot"></span>
+                                <span id="connectionText">Connecting...</span>
+                            </div>
+                            <div class="divider-vertical" style="height: 16px;"></div>
+                            <div class="status-indicator">
+                                <span>⏱️</span>
+                                <span id="sessionTime">0:00</span>
+                            </div>
+                            <div class="divider-vertical" style="height: 16px;"></div>
+                            <div class="status-indicator">
+                                <span>📝</span>
+                                <span id="wordCount">0 words</span>
+                            </div>
+                            <div class="divider-vertical" style="height: 16px;"></div>
+                            <!-- Confidence Meter -->
+                            <div class="confidence-meter" id="confidenceMeter" style="display:none;">
+                                <div class="confidence-gauge">
+                                    <svg viewBox="0 0 36 36">
+                                        <circle class="gauge-bg" cx="18" cy="18" r="15"></circle>
+                                        <circle class="gauge-fill" id="gaugeCircle" cx="18" cy="18" r="15"
+                                            stroke-dasharray="94.2" stroke-dashoffset="47.1"></circle>
+                                    </svg>
+                                    <div class="gauge-text" id="gaugeText">50</div>
+                                </div>
+                                <span class="confidence-label" id="confidenceLabel">Steady</span>
+                                <div class="confidence-tooltip" id="confidenceTooltip">
+                                    <h4>🎯 Confidence Breakdown</h4>
+                                    <div id="tooltipSignals"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="controls">
+                            <button class="control-btn secondary" id="muteBtn" disabled title="Mute">
+                                🎤
+                            </button>
+                            <button class="control-btn primary" id="startBtn" title="Start Session">
+                                ▶️
+                            </button>
+                            <button class="control-btn danger" id="stopBtn" disabled title="End Session"
+                                style="display: none;">
+                                ⏹️
+                            </button>
+                            <button class="control-btn secondary" id="settingsBtn" title="Settings">
+                                ⚙️
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Transcript Panel -->
+                    <div class="glass-card-static transcript-panel">
+                        <div class="transcript-header">
+                            <h3>💬 Conversation</h3>
+                            <button class="btn btn-ghost btn-sm" id="clearBtn">Clear</button>
+                        </div>
+
+                        <!-- Challenge Banner (hidden by default, shown when ?challenge=) -->
+                        <div id="challengeBanner"
+                            style="display:none; background:linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1)); border:1px solid rgba(99,102,241,0.25); border-radius:12px; padding:12px 16px; margin:0 0 12px 0;">
+                            <div
+                                style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                                <span style="font-weight:600; font-size:14px; color:#a78bfa;" id="challengeTitle">🎯
+                                    Challenge</span>
+                                <span style="font-size:12px; color:#f59e0b; font-weight:600;" id="challengeXP">⚡ 0
+                                    XP</span>
+                            </div>
+                            <p style="font-size:12px; color:rgba(255,255,255,0.6); margin:0 0 6px 0;"
+                                id="challengeDesc"></p>
+                            <div
+                                style="display:flex; align-items:center; gap:12px; font-size:12px; color:rgba(255,255,255,0.5);">
+                                <span>⏱️ <span id="challengeTimer">0:00</span> / <span
+                                        id="challengeLimit">0:00</span></span>
+                                <div
+                                    style="flex:1; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden;">
+                                    <div id="challengeProgress"
+                                        style="height:100%; width:0%; background:linear-gradient(90deg, #6366f1, #8b5cf6); border-radius:2px; transition:width 0.3s;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <div class="recording-indicator" id="recordingIndicator">
+                            <div class="mic-status" id="micStatusPill">
+                                <span class="mic-dot"></span>
+                                <span id="micStatusText">Mic Ready</span>
+                            </div>
+                            <div class="pulse-ring"></div>
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                        <div class="transcript-content" id="transcriptContent">
+                            <div class="transcript-empty">
+                                <div class="transcript-empty-icon">🎙️</div>
+                                <p>Click Start to begin your practice session</p>
+                                <p style="font-size: var(--text-sm); margin-top: var(--space-2);">Speak naturally and
+                                    get real-time feedback</p>
+                            </div>
+                        </div>
+
+
+
+                        <div class="feedback-section" id="feedbackSection" style="display: none;">
+                            <div class="feedback-item">
+                                <div class="feedback-label">✏️ Corrected</div>
+                                <div class="feedback-text" id="correctedText"></div>
+                            </div>
+                            <div class="feedback-item">
+                                <div class="feedback-label">💡 Tips</div>
+                                <div class="feedback-text" id="feedbackTips"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Hidden Audio -->
+        <audio id="aiAudio" style="display: none;"></audio>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="js/confidence.js?v=1"></script>
+    <script src="js/animated-avatar.js?v=2"></script>
+    <script src="js/simli-avatar.js?v=6"></script>
+    <script src="js/practice.js?v=22"></script>
+</body>
+
+</html>

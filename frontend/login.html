@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In - FluentAI</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/layout.css">
+
+    <style>
+        .auth-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .auth-error.show {
+            display: flex;
+        }
+
+        .auth-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .auth-success.show {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: var(--text-primary);
+        }
+
+        .input-label {
+            display: block;
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-2);
+            color: var(--text-secondary);
+        }
+
+        .auth-social-btn {
+            transition: all 0.2s ease;
+        }
+
+        .auth-social-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+        }
+
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        .input:focus {
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .input.error {
+            border-color: rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-layout">
+        <div class="glass-card auth-card animate-scale-in">
+            <div class="auth-header">
+                <a href="index.html" class="auth-logo">
+                    <div class="nav-logo-icon">🎓</div>
+                    <span class="nav-logo-text">FluentAI</span>
+                </a>
+                <h1 class="auth-title">Welcome back</h1>
+                <p class="auth-subtitle">Log in to continue your learning journey</p>
+            </div>
+
+            <!-- Error/Success Messages -->
+            <div class="auth-error" id="authError">
+                <span>⚠️</span>
+                <span id="errorText">Invalid credentials</span>
+            </div>
+            <div class="auth-success" id="authSuccess">
+                <span>✅</span>
+                <span id="successText">Login successful! Redirecting...</span>
+            </div>
+
+            <!-- Google Sign-In -->
+            <div class="auth-social">
+                <button class="auth-social-btn" id="googleSignIn">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    Continue with Google
+                </button>
+            </div>
+
+            <div class="auth-divider">
+                <span>or</span>
+            </div>
+
+            <!-- Email Form -->
+            <form class="auth-form" id="loginForm" novalidate>
+                <div>
+                    <label class="input-label" for="email">Email</label>
+                    <input type="email" class="input" placeholder="you@example.com" required id="email"
+                        autocomplete="email">
+                </div>
+
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-2);">
+                        <label class="input-label" for="password" style="margin-bottom:0;">Password</label>
+                        <a href="javascript:void(0)"
+                            onclick="alert('Password reset is not available in demo mode. You can log in with any password.')"
+                            style="font-size: var(--text-sm); color: var(--accent-primary);">Forgot?</a>
+                    </div>
+                    <div class="password-wrapper">
+                        <input type="password" class="input" placeholder="••••••••" required id="password"
+                            autocomplete="current-password">
+                        <button type="button" class="password-toggle" id="passToggle" title="Show password">👁️</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg" id="loginBtn"
+                    style="width: 100%; margin-top: var(--space-4);">
+                    Log In
+                </button>
+            </form>
+
+            <!-- Guest login -->
+            <div style="text-align:center; margin-top:12px;">
+                <button id="guestBtn"
+                    style="background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;padding:6px 12px;transition:color 0.2s;"
+                    onmouseover="this.style.color='#a78bfa'" onmouseout="this.style.color='var(--text-muted)'">
+                    🚀 Continue as Guest
+                </button>
+            </div>
+
+            <div class="auth-footer">
+                <p style="color: var(--text-muted);">
+                    Don't have an account? <a href="signup.html">Sign up</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is already logged in
+        const user = localStorage.getItem('fluentai_user');
+        if (user) {
+            window.location.href = 'dashboard.html';
+        }
+
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginForm = document.getElementById('loginForm');
+        const authError = document.getElementById('authError');
+        const errorText = document.getElementById('errorText');
+        const authSuccess = document.getElementById('authSuccess');
+        const successText = document.getElementById('successText');
+
+        // Password visibility toggle
+        document.getElementById('passToggle').addEventListener('click', () => {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            document.getElementById('passToggle').textContent = type === 'password' ? '👁️' : '🙈';
+        });
+
+        // Clear error on input
+        emailInput.addEventListener('input', () => {
+            emailInput.classList.remove('error');
+            authError.classList.remove('show');
+        });
+        passwordInput.addEventListener('input', () => {
+            passwordInput.classList.remove('error');
+            authError.classList.remove('show');
+        });
+
+        function showError(msg) {
+            errorText.textContent = msg;
+            authError.classList.add('show');
+            authSuccess.classList.remove('show');
+        }
+
+        function showSuccess(msg) {
+            successText.textContent = msg;
+            authSuccess.classList.add('show');
+            authError.classList.remove('show');
+        }
+
+        // Google Sign-In Handler — works cleanly without real client_id
+        document.getElementById('googleSignIn').addEventListener('click', () => {
+            // Try Google Sign-In if available, otherwise graceful fallback
+            try {
+                if (typeof google !== 'undefined' && google.accounts) {
+                    google.accounts.id.initialize({
+                        client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+                        callback: handleGoogleSignIn
+                    });
+                    google.accounts.id.prompt((notification) => {
+                        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                            // Google not available, use demo login
+                            loginAsGuest('Google User', 'google.user@gmail.com', 'google');
+                        }
+                    });
+                } else {
+                    loginAsGuest('Google User', 'google.user@gmail.com', 'google');
+                }
+            } catch (err) {
+                console.log('Google Sign-In not available, using fallback');
+                loginAsGuest('Google User', 'google.user@gmail.com', 'google');
+            }
+        });
+
+        function handleGoogleSignIn(response) {
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            doLogin({
+                id: payload.sub,
+                name: payload.name,
+                email: payload.email,
+                picture: payload.picture,
+                provider: 'google'
+            });
+        }
+
+        // Email/Password Login
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            // Validate
+            if (!email) {
+                emailInput.classList.add('error');
+                showError('Please enter your email address.');
+                emailInput.focus();
+                return;
+            }
+
+            if (!email.includes('@') || !email.includes('.')) {
+                emailInput.classList.add('error');
+                showError('Please enter a valid email address.');
+                emailInput.focus();
+                return;
+            }
+
+            if (!password || password.length < 3) {
+                passwordInput.classList.add('error');
+                showError('Please enter your password.');
+                passwordInput.focus();
+                return;
+            }
+
+            // Simulate loading
+            loginBtn.classList.add('btn-loading');
+            loginBtn.disabled = true;
+
+            // Check if user exists in localStorage (from signup)
+            const registeredUsers = JSON.parse(localStorage.getItem('fluentai_registered_users') || '[]');
+            const existingUser = registeredUsers.find(u => u.email === email);
+
+            setTimeout(() => {
+                if (existingUser) {
+                    // Check password
+                    if (existingUser.password !== password) {
+                        loginBtn.classList.remove('btn-loading');
+                        loginBtn.disabled = false;
+                        passwordInput.classList.add('error');
+                        showError('Incorrect password. Please try again.');
+                        return;
+                    }
+                    doLogin({
+                        id: existingUser.id,
+                        name: existingUser.name,
+                        email: existingUser.email,
+                        picture: null,
+                        provider: 'email'
+                    });
+                } else {
+                    // For demo — create user from email
+                    const namePart = email.split('@')[0];
+                    const name = namePart.charAt(0).toUpperCase() + namePart.slice(1).replace(/[._-]/g, ' ');
+                    doLogin({
+                        id: Date.now(),
+                        name: name,
+                        email: email,
+                        picture: null,
+                        provider: 'email'
+                    });
+                }
+            }, 600);
+        });
+
+        // Guest Login
+        document.getElementById('guestBtn').addEventListener('click', () => {
+            loginAsGuest('Guest', 'guest@fluentai.com', 'guest');
+        });
+
+        function loginAsGuest(name, email, provider) {
+            showSuccess(`Welcome, ${name}! Redirecting...`);
+            setTimeout(() => {
+                doLogin({
+                    id: Date.now(),
+                    name: name,
+                    email: email,
+                    picture: null,
+                    provider: provider
+                });
+            }, 500);
+        }
+
+        function doLogin(userData) {
+            showSuccess(`Welcome back, ${userData.name}! Redirecting...`);
+            localStorage.setItem('fluentai_user', JSON.stringify(userData));
+
+            // Initialize progress if not exists
+            if (!localStorage.getItem('fluentai_progress')) {
+                localStorage.setItem('fluentai_progress', JSON.stringify({
+                    wordsSpoken: 0,
+                    sessionsCompleted: 0,
+                    streak: 1,
+                    totalMinutes: 0,
+                    level: 'Beginner',
+                    xp: 0,
+                    achievements: []
+                }));
+            }
+
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 700);
+        }
+    </script>
+</body>
+
+</html>
