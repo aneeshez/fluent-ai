@@ -411,8 +411,8 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Analyzing...';
 
-            try {
-                const res = await fetch('http://localhost:5000/api/analyze-writing', {
+                const backendUrl = (window.location.origin && !window.location.origin.startsWith('file')) ? '' : 'http://localhost:8000';
+                const res = await fetch(`${backendUrl}/api/analyze-writing/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

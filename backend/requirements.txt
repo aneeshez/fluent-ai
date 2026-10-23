@@ -1,9 +1,4 @@
-Flask
-flask-socketio
-flask-cors
-python-dotenv
+django>=5.0
+django-cors-headers
 groq
-edge-tts
-requests
-sqlalchemy
-pydub
+python-dotenv

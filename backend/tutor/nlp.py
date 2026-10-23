@@ -135,7 +135,6 @@ def analyze_text(transcript, challenge=None, confidence_level=None, conversation
     # Append confidence adaptation
     if confidence_level and confidence_level in CONFIDENCE_PROMPTS:
         system_prompt += CONFIDENCE_PROMPTS[confidence_level]
-        logger.info(f"🎯 Confidence: {confidence_level}")
 
     # Build messages with conversation history
     messages = [{"role": "system", "content": system_prompt}]
@@ -151,22 +150,21 @@ def analyze_text(transcript, challenge=None, confidence_level=None, conversation
 
     try:
         comp = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="qwen/qwen3.8-27b",
             messages=messages,
-            max_tokens=100,
-            temperature=0.8,
+            max_tokens=150,
+            temperature=0.7,
         )
         reply = comp.choices[0].message.content or "That's interesting! Tell me more about that."
         return {"teacher_response": reply.strip(), "corrected_text": transcript, "tips": []}
     except Exception as e:
         logger.error(f"Groq error: {e}")
-        # Fallback to 70b if 8b fails
         try:
             comp = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="openai/gpt-oss-120b",
                 messages=messages,
-                max_tokens=100,
-                temperature=0.8,
+                max_tokens=150,
+                temperature=0.7,
             )
             reply = comp.choices[0].message.content or "Nice! Keep going!"
             return {"teacher_response": reply.strip(), "corrected_text": transcript, "tips": []}

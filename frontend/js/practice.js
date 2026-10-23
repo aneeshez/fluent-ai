@@ -1,6 +1,6 @@
-// Conversation controller and audio pipeline
+// Conversation controller and audio pipeline using Web Speech API and Django REST backend
 
-// Auth
+// Auth state
 let user = JSON.parse(localStorage.getItem('fluentai_user') || 'null');
 if (!user) {
     user = { name: 'Guest', email: 'guest@fluentai.com' };
@@ -12,17 +12,12 @@ if (avatarEl && user) {
     else avatarEl.textContent = (user.name || 'U')[0].toUpperCase();
 }
 
-// State
-let socket = null;
-// dgSocket is declared in the Deepgram STT section below
+// Session state
 let mediaStream = null;
-let audioContext = null;
-let processorNode = null;
-let sourceNode = null;
 let isRecording = false;
 let isMuted = false;
 let isAISpeaking = false;
-let isAIThinking = false;  // Prevent duplicate sends while AI processes
+let isAIThinking = false;
 let sessionStartTime = null;
 let sessionTimer = null;
 let wordCount = 0;
@@ -31,13 +26,15 @@ let activeChallenge = null;
 let challengeTimerInterval = null;
 let conversationLog = [];
 let confidenceAnalyzer = null;
+let recognition = null;
+let currentSessionId = null;
+let silenceTimer = null;
+let accumulatedTranscript = '';
 
-
-
-// Default backend host (detect current origin or fallback to local port)
+// Backend endpoint
 const BACKEND = (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file'))
     ? window.location.origin
-    : 'http://localhost:5000';
+    : 'http://localhost:8000';
 
 // Challenge configuration
 const CHALLENGES = {
@@ -47,7 +44,7 @@ const CHALLENGES = {
         description: 'Practice introducing yourself: name, background, hobbies, and goals.',
         timeLimit: 120,
         xp: 20,
-        greeting: null,  // Will come from backend
+        greeting: "Hi there! Let's practice introducing yourself. Start by telling me your name and what you do!",
         tips: ['Use "My name is..."', 'Mention where you\'re from', 'Share your hobbies']
     },
     describe_home: {
@@ -56,7 +53,7 @@ const CHALLENGES = {
         description: 'Describe your home: rooms, furniture, and what you like about it.',
         timeLimit: 180,
         xp: 25,
-        greeting: null,
+        greeting: "Welcome! Let's talk about your home. What kind of place do you live in?",
         tips: ['Use adjectives (cozy, spacious)', 'Describe each room', 'Use spatial words']
     },
     favorite_food: {
@@ -65,7 +62,7 @@ const CHALLENGES = {
         description: 'Describe your favorite dish, how it\'s made, and why you love it.',
         timeLimit: 180,
         xp: 35,
-        greeting: null,
+        greeting: "I love talking about food! What is your absolute favorite dish?",
         tips: ['Use sensory words (delicious, crunchy)', 'Explain ingredients', 'Share memories']
     },
     story_telling: {
@@ -74,7 +71,7 @@ const CHALLENGES = {
         description: 'Tell a short story about an interesting experience you had.',
         timeLimit: 240,
         xp: 40,
-        greeting: null,
+        greeting: "Tell me a short story! What is an interesting experience that happened to you recently?",
         tips: ['Use past tense', 'Add connectors (first, then, suddenly)', 'Include emotions']
     },
     job_interview: {
@@ -83,7 +80,7 @@ const CHALLENGES = {
         description: 'Practice answering common job interview questions professionally.',
         timeLimit: 300,
         xp: 75,
-        greeting: null,
+        greeting: "Hello! Welcome to our mock interview. To start off, could you tell me a little bit about yourself?",
         tips: ['Use formal language', 'Be confident and concise', 'Give specific examples']
     },
     morning_routine: {
@@ -92,7 +89,7 @@ const CHALLENGES = {
         description: 'Describe your typical morning step by step.',
         timeLimit: 180,
         xp: 50,
-        greeting: null,
+        greeting: "Good morning! Walk me through your typical morning routine step by step.",
         tips: ['Use sequence words (first, then)', 'Mention times', 'Describe habits']
     },
     interview_prep: {
@@ -101,7 +98,7 @@ const CHALLENGES = {
         description: 'Learn interview techniques: STAR method, elevator pitch, power words.',
         timeLimit: 300,
         xp: 60,
-        greeting: null,
+        greeting: "Today we will work on interview technique. Have you ever practiced answering with the STAR method?",
         tips: ['Learn the STAR method', 'Practice your elevator pitch', 'Use power words']
     },
     debate: {
@@ -110,19 +107,17 @@ const CHALLENGES = {
         description: 'Argue for or against a topic. Practice persuasion and reasoning.',
         timeLimit: 300,
         xp: 80,
-        greeting: null,
+        greeting: "Let's debate! Topic: 'Social media does more harm than good.' Do you agree or disagree?",
         tips: ['Pick a clear side', 'Give 2-3 strong arguments', 'Address counter-points']
     }
 };
 
-// Read challenge from URL params
 function initChallenge() {
     const params = new URLSearchParams(window.location.search);
     const challengeId = params.get('challenge');
     if (challengeId && CHALLENGES[challengeId]) {
         activeChallenge = CHALLENGES[challengeId];
         showChallengeBanner();
-        console.log(`[Challenge] Active: ${activeChallenge.title}`);
     }
 }
 
@@ -193,11 +188,9 @@ function completeChallenge() {
         if (titleEl) titleEl.textContent = '✅ Challenge Complete!';
         if (xpEl) xpEl.textContent = `⚡ +${activeChallenge.xp} XP Earned!`;
     }
-
-    console.log(`[Challenge] Completed: ${activeChallenge.title} (+${activeChallenge.xp} XP)`);
 }
 
-// DOM
+// DOM Elements
 const localVideo = document.getElementById('localVideo');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
@@ -211,323 +204,204 @@ const transcriptContent = document.getElementById('transcriptContent');
 const feedbackSection = document.getElementById('feedbackSection');
 const correctedText = document.getElementById('correctedText');
 const feedbackTips = document.getElementById('feedbackTips');
-const aiAudio = document.getElementById('aiAudio');
 const clearBtn = document.getElementById('clearBtn');
 
-// Voice selection for speech synthesis fallback
+// Voice synthesis setup (Native Web Speech API)
 function pickVoice() {
+    if (!('speechSynthesis' in window)) return;
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return;
-    const prefs = ['Jenny', 'Aria', 'Zira', 'Samantha', 'Female'];
+    const prefs = ['Jenny', 'Aria', 'Zira', 'Samantha', 'Google US English', 'Natural', 'Female'];
     for (const p of prefs) {
         const v = voices.find(v => v.name.includes(p) && v.lang.startsWith('en'));
-        if (v) { selectedVoice = v; console.log('[TTS] Voice:', v.name); return; }
+        if (v) { selectedVoice = v; return; }
     }
     const enVoice = voices.find(v => v.lang.startsWith('en-US')) || voices.find(v => v.lang.startsWith('en'));
-    if (enVoice) { selectedVoice = enVoice; console.log('[TTS] Voice:', enVoice.name); }
+    if (enVoice) selectedVoice = enVoice;
 }
-window.speechSynthesis.onvoiceschanged = pickVoice;
-pickVoice();
 
-// Handle speech synthesis and speaking state
-let simliAudioTimer = null;
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = pickVoice;
+    pickVoice();
+}
 
+// Speak AI reply via browser SpeechSynthesis
 function speak(text) {
-    if (!text) return;
+    if (!text || !('speechSynthesis' in window)) {
+        onSpeakingDone();
+        return;
+    }
+
+    window.speechSynthesis.cancel();
     isAISpeaking = true;
     setStatus('Luna speaking...');
     if (aiStatus) aiStatus.textContent = 'Speaking...';
-    // Trigger avatar speaking animation
-    if (typeof avatarSpeaking === 'function') avatarSpeaking();
-    if (typeof startAvatarSpeaking === 'function') startAvatarSpeaking();
-    // Audio comes from backend via tts-audio Socket.IO event
-    // Safety timeout in case audio never arrives
-    const safetyMs = Math.max(5000, Math.min(25000, text.length * 120));
-    if (simliAudioTimer) clearTimeout(simliAudioTimer);
-    simliAudioTimer = setTimeout(() => {
-        if (isAISpeaking) {
-            console.log('[TTS] Safety reset — no audio received');
-            onSimliAudioDone();
-        }
-    }, safetyMs);
+
+    if (window.lunaAvatar) {
+        window.lunaAvatar.setState('speaking');
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    if (selectedVoice) utterance.voice = selectedVoice;
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    utterance.onend = () => {
+        onSpeakingDone();
+    };
+
+    utterance.onerror = (e) => {
+        console.warn('[TTS] Synthesis event:', e);
+        onSpeakingDone();
+    };
+
+    window.speechSynthesis.speak(utterance);
 }
 
-function onSimliAudioDone() {
+function onSpeakingDone() {
     isAISpeaking = false;
     if (aiStatus) aiStatus.textContent = 'Listening...';
     setStatus('🟢 Live — speak now!');
     if (confidenceAnalyzer) confidenceAnalyzer.markAIFinished();
-    // Reset avatar to listening state
-    if (typeof avatarListening === 'function') avatarListening();
-    if (typeof stopAvatarSpeaking === 'function') stopAvatarSpeaking();
-}
 
-// Raw PCM16 audio playback buffer
-let ttsAudioCtx = null;
-let ttsNextStart = 0;
-
-function playPCM16Audio(uint8Array) {
-    try {
-        if (!ttsAudioCtx || ttsAudioCtx.state === 'closed') {
-            ttsAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-            ttsNextStart = 0;
-        }
-        if (ttsAudioCtx.state === 'suspended') {
-            ttsAudioCtx.resume();
-        }
-
-        // Convert PCM16 (Int16) to Float32
-        const int16 = new Int16Array(uint8Array.buffer, uint8Array.byteOffset, uint8Array.length / 2);
-        const float32 = new Float32Array(int16.length);
-        for (let i = 0; i < int16.length; i++) {
-            float32[i] = int16[i] / 32768;
-        }
-
-        // Create audio buffer
-        const buffer = ttsAudioCtx.createBuffer(1, float32.length, 16000);
-        buffer.getChannelData(0).set(float32);
-
-        const source = ttsAudioCtx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(ttsAudioCtx.destination);
-
-        // Schedule playback sequentially
-        const now = ttsAudioCtx.currentTime;
-        const startAt = Math.max(now, ttsNextStart);
-        source.start(startAt);
-        ttsNextStart = startAt + buffer.duration;
-    } catch (e) {
-        console.error('[TTS Play] Error:', e);
+    if (window.lunaAvatar) {
+        window.lunaAvatar.setState('listening');
     }
 }
 
-// Socket.IO connection and message handlers
-function initSocket() {
-    socket = io(BACKEND, { transports: ['websocket', 'polling'] });
-    socket.on('connect', () => {
-        console.log('[IO] Connected to backend');
+// Native Web Speech Recognition (Zero cost, 100% free, no API key)
+function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert('Your browser does not support Web Speech Recognition. Please use Chrome, Edge, or Brave.');
+        return null;
+    }
+
+    const rec = new SpeechRecognition();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = 'en-US';
+
+    rec.onstart = () => {
+        setStatus('🟢 Live — speak now!');
+        if (aiStatus) aiStatus.textContent = 'Listening...';
         if (connectionDot) { connectionDot.classList.add('connected'); connectionDot.classList.remove('disconnected'); }
-        if (connectionText) connectionText.textContent = 'Connected';
-        socket.emit('join', { room: 'practice' });
-    });
-    socket.on('disconnect', () => {
-        if (connectionDot) { connectionDot.classList.remove('connected'); connectionDot.classList.add('disconnected'); }
-        if (connectionText) connectionText.textContent = 'Disconnected';
-    });
-
-    // AI response
-    socket.on('ai-feedback', (data) => {
-        const reply = data.teacher_response;
-        console.log('[AI] ⚡', reply);
-        isAIThinking = false;  // AI done thinking
-        if (reply) {
-            addMessage(reply, 'ai');
-            speak(reply);
-        }
-        if (data.corrected_text || data.tips?.length) showFeedback(data);
-    });
-
-    // Simli PCM16 audio chunks
-    socket.on('tts-audio', (data) => {
-        if (!data.audio) return;
-        try {
-            const binary = atob(data.audio);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
-            }
-
-            // Send to Simli for lip-sync (Simli also plays the audio)
-            let simliHandled = false;
-            if (typeof sendAudioToSimli === 'function') {
-                simliHandled = sendAudioToSimli(bytes);
-                if (simliHandled) {
-                    console.log(`[Audio] Chunk ${data.index + 1}/${data.total} to Simli`);
-                }
-            }
-
-            // Fallback: play via AudioContext only if Simli didn't handle it
-            if (!simliHandled) {
-                playPCM16Audio(bytes);
-            }
-
-            if (data.done) {
-                const totalBytes = data.total * 32000;
-                const durationMs = (totalBytes / 32000) * 1000 + 500;
-
-                if (simliAudioTimer) clearTimeout(simliAudioTimer);
-                simliAudioTimer = setTimeout(() => {
-                    onSimliAudioDone();
-                }, durationMs);
-            }
-        } catch (e) {
-            console.error('[Audio] Error:', e);
-        }
-    });
-}
-
-// Deepgram WebSocket streaming for transcription
-let dgSocket = null;
-let dgReady = false;
-let dgReconnectAttempts = 0;
-const DG_MAX_RECONNECTS = 5;
-let dgKeepAlive = null;
-
-async function startDeepgram() {
-    try {
-        const res = await fetch(BACKEND + '/api/deepgram-key');
-        const data = await res.json();
-        if (!data.key) { console.error('[DG] No API key'); return; }
-
-        // Get mic sample rate
-        audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
-        const sampleRate = audioContext.sampleRate;
-
-        const url = `wss://api.deepgram.com/v1/listen?model=nova-2&language=en&smart_format=true&interim_results=true&utterance_end_ms=1000&vad_events=true&encoding=linear16&sample_rate=${sampleRate}&channels=1&endpointing=300`;
-
-        dgSocket = new WebSocket(url, ['token', data.key]);
-
-        dgSocket.onopen = () => {
-            console.log('[DG] ✅ Connected to Deepgram');
-            dgReady = true;
-            dgReconnectAttempts = 0;
-            setStatus('🟢 Live — speak now!');
-            if (aiStatus) aiStatus.textContent = 'Listening...';
-
-            // KeepAlive every 8 seconds
-            if (dgKeepAlive) clearInterval(dgKeepAlive);
-            dgKeepAlive = setInterval(() => {
-                if (dgSocket?.readyState === WebSocket.OPEN) {
-                    dgSocket.send(JSON.stringify({ type: 'KeepAlive' }));
-                }
-            }, 8000);
-
-            // Start audio capture
-            startAudioCapture(sampleRate);
-        };
-
-        let fullSentence = '';
-
-        dgSocket.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
-
-            if (msg.type === 'SpeechStarted') {
-                setStatus('🔴 Listening...');
-                return;
-            }
-
-            if (msg.type === 'UtteranceEnd') {
-                if (fullSentence.trim()) {
-                    sendToAI(fullSentence.trim());
-                }
-                fullSentence = '';
-                return;
-            }
-
-            if (msg.type === 'Results') {
-                const transcript = msg.channel?.alternatives?.[0]?.transcript || '';
-                if (!transcript.trim()) return;
-
-                if (msg.is_final) {
-                    clearInterim();
-                    fullSentence += (fullSentence ? ' ' : '') + transcript;
-                    addMessage(transcript, 'user');
-                    countWords(transcript);
-                    if (msg.speech_final) {
-                        sendToAI(fullSentence.trim());
-                        fullSentence = '';
-                    }
-                } else {
-                    showInterim(transcript);
-                    setStatus('🔴 Hearing you...');
-                }
-            }
-        };
-
-        dgSocket.onerror = (err) => {
-            console.error('[DG] WebSocket error:', err);
-        };
-
-        dgSocket.onclose = () => {
-            console.log('[DG] Connection closed');
-            dgReady = false;
-            if (dgKeepAlive) { clearInterval(dgKeepAlive); dgKeepAlive = null; }
-
-            // Auto-reconnect if session active
-            if (isRecording && dgReconnectAttempts < DG_MAX_RECONNECTS) {
-                dgReconnectAttempts++;
-                console.log(`[DG] Reconnecting (${dgReconnectAttempts}/${DG_MAX_RECONNECTS})...`);
-                setTimeout(() => { if (isRecording) startDeepgram(); }, 2000);
-            }
-        };
-
-    } catch (err) {
-        console.error('[DG] Start error:', err);
-    }
-}
-
-function stopDeepgram() {
-    dgReady = false;
-    dgReconnectAttempts = DG_MAX_RECONNECTS; // Prevent reconnect
-    if (dgKeepAlive) { clearInterval(dgKeepAlive); dgKeepAlive = null; }
-    if (dgSocket) { try { dgSocket.close(); } catch (e) { } dgSocket = null; }
-    if (processorNode) { try { processorNode.disconnect(); } catch (e) { } processorNode = null; }
-    if (sourceNode) { try { sourceNode.disconnect(); } catch (e) { } sourceNode = null; }
-    if (audioContext) { try { audioContext.close(); } catch (e) { } audioContext = null; }
-}
-
-function startAudioCapture(sampleRate) {
-    if (!mediaStream || !audioContext) return;
-    if (processorNode) { try { processorNode.disconnect(); } catch (e) { } }
-    if (sourceNode) { try { sourceNode.disconnect(); } catch (e) { } }
-
-    sourceNode = audioContext.createMediaStreamSource(mediaStream);
-    processorNode = audioContext.createScriptProcessor(4096, 1, 1);
-
-    processorNode.onaudioprocess = (event) => {
-        if (!isRecording || isMuted || isAISpeaking) return;
-        if (!dgSocket || dgSocket.readyState !== WebSocket.OPEN) return;
-
-        const float32 = event.inputBuffer.getChannelData(0);
-        const int16 = new Int16Array(float32.length);
-        for (let i = 0; i < float32.length; i++) {
-            const s = Math.max(-1, Math.min(1, float32[i]));
-            int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-        }
-        dgSocket.send(int16.buffer);
+        if (connectionText) connectionText.textContent = 'Ready';
     };
 
-    sourceNode.connect(processorNode);
-    processorNode.connect(audioContext.destination);
-    console.log('[DG] ✅ Audio capture started (' + sampleRate + 'Hz)');
+    rec.onresult = (event) => {
+        if (!isRecording || isMuted || isAISpeaking || isAIThinking) return;
+
+        let interimText = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                accumulatedTranscript += ' ' + transcript;
+            } else {
+                interimText += transcript;
+            }
+        }
+
+        if (interimText.trim()) {
+            showInterim(interimText.trim());
+            setStatus('Hearing you...');
+        }
+
+        // Reset silence timer on every speech event
+        if (silenceTimer) clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(() => {
+            const finalSpeech = (accumulatedTranscript + ' ' + interimText).trim();
+            if (finalSpeech.length >= 2 && !isAIThinking && !isAISpeaking) {
+                clearInterim();
+                accumulatedTranscript = '';
+                addMessage(finalSpeech, 'user');
+                countWords(finalSpeech);
+                sendToDjangoTutor(finalSpeech);
+            }
+        }, 1200);
+    };
+
+    rec.onerror = (event) => {
+        if (event.error === 'no-speech') return;
+        console.warn('[STT] Speech recognition warning:', event.error);
+    };
+
+    rec.onend = () => {
+        // Automatically restart listening if user is still in active session
+        if (isRecording && !isMuted) {
+            try {
+                rec.start();
+            } catch (e) { }
+        }
+    };
+
+    return rec;
 }
 
-// Send input text to backend tutor
-function sendToAI(text) {
-    if (!socket?.connected || !text?.trim()) return;
-    if (isAIThinking) {
-        console.log('[AI] Skipping — already thinking');
-        return;
-    }
+// Send text to Django REST endpoint (/api/chat/)
+async function sendToDjangoTutor(text) {
+    if (!text?.trim() || isAIThinking) return;
+
     isAIThinking = true;
     if (aiStatus) aiStatus.textContent = 'Thinking...';
-    setStatus('AI thinking...');
-    // Trigger avatar thinking animation
-    if (typeof avatarThinking === 'function') avatarThinking();
+    setStatus('Luna thinking...');
 
-    const payload = { text: text.trim() };
-    if (activeChallenge) payload.challenge = activeChallenge.id;
+    if (window.lunaAvatar) {
+        window.lunaAvatar.setState('thinking');
+    }
 
-    // Attach confidence data
+    const payload = {
+        text: text.trim(),
+        challenge: activeChallenge ? activeChallenge.id : null,
+        conversation_history: conversationLog.slice(-10),
+        session_id: currentSessionId
+    };
+
     if (confidenceAnalyzer) {
         const cd = confidenceAnalyzer.getConfidenceData();
         payload.confidence_level = cd.level;
         payload.confidence_score = cd.score;
     }
 
-    socket.emit('text-input', payload);
+    try {
+        const response = await fetch(`${BACKEND}/api/chat/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        isAIThinking = false;
+
+        if (data.session_id) {
+            currentSessionId = data.session_id;
+        }
+
+        const reply = data.teacher_response || "That's interesting! Tell me more.";
+        addMessage(reply, 'ai');
+        speak(reply);
+
+        if (data.corrected_text || (data.tips && data.tips.length)) {
+            showFeedback(data);
+        }
+
+    } catch (err) {
+        console.error('[Tutor API] Error:', err);
+        isAIThinking = false;
+        setStatus('Error contacting tutor');
+        const fallbackMsg = "I had a small hiccup connecting. Could you please repeat that?";
+        addMessage(fallbackMsg, 'ai');
+        speak(fallbackMsg);
+    }
 }
 
+// Session control
 async function startSession() {
     if (isRecording) return;
     setStatus('Starting...');
@@ -535,29 +409,17 @@ async function startSession() {
     try {
         mediaStream = await navigator.mediaDevices.getUserMedia({
             video: true,
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-                sampleRate: 16000
-            }
+            audio: true
         });
         localVideo.srcObject = mediaStream;
-        if (!socket) initSocket();
-
-        // Clear server-side conversation history for fresh session
-        if (socket?.connected) {
-            socket.emit('clear-history');
-        }
 
         isRecording = true;
         isAIThinking = false;
         sessionStartTime = Date.now();
         wordCount = 0;
-        dgReconnectAttempts = 0;
         conversationLog = [];
+        accumulatedTranscript = '';
 
-        // Initialize confidence analyzer
         if (window.ConfidenceAnalyzer) {
             confidenceAnalyzer = new ConfidenceAnalyzer();
             const meter = document.getElementById('confidenceMeter');
@@ -574,40 +436,52 @@ async function startSession() {
         transcriptContent.innerHTML = '';
         sessionTimer = setInterval(updateTimer, 1000);
 
-        await startDeepgram();
+        if (!recognition) {
+            recognition = initSpeechRecognition();
+        }
+        if (recognition) {
+            try { recognition.start(); } catch (e) { }
+        }
 
-        // Challenge greeting or default — send to backend for TTS
         let greeting;
         if (activeChallenge) {
-            greeting = activeChallenge.greeting || `Let's practice ${activeChallenge.title}! I'm Luna, your coach. Let's begin!`;
+            greeting = activeChallenge.greeting;
             challengeTimerInterval = setInterval(updateChallengeTimer, 500);
         } else {
-            greeting = "Hi! I'm Luna, your English communication tutor. Let's have a conversation — speak naturally and I'll help you improve!";
+            greeting = "Hi! I'm Luna, your English tutor. Let's have a conversation — speak naturally and I'll help you practice!";
         }
+
         addMessage(greeting, 'ai');
-        // Send greeting to backend for Deepgram TTS audio
-        if (socket?.connected) {
-            speak(greeting);
-            socket.emit('speak-greeting', { text: greeting });
-        }
-        if (aiStatus) aiStatus.textContent = 'Luna speaking...';
+        speak(greeting);
 
     } catch (err) {
-        console.error('[SESSION] Failed:', err);
-        setStatus('Camera/Mic denied');
-        alert('Please allow camera and microphone access to start a session.');
+        console.error('[Session] Access denied:', err);
+        setStatus('Camera/Mic permission needed');
+        alert('Please allow camera and microphone access to practice speaking.');
     }
 }
 
 function stopSession() {
     isRecording = false;
     isAIThinking = false;
-    window.speechSynthesis.cancel();
-    stopDeepgram();
-    if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
+    if (silenceTimer) clearTimeout(silenceTimer);
+    if (recognition) {
+        try { recognition.stop(); } catch (e) { }
+    }
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+    }
     localVideo.srcObject = null;
     clearInterval(sessionTimer);
-    if (challengeTimerInterval) { clearInterval(challengeTimerInterval); challengeTimerInterval = null; }
+    if (challengeTimerInterval) {
+        clearInterval(challengeTimerInterval);
+        challengeTimerInterval = null;
+    }
+
     startBtn.style.display = 'flex';
     stopBtn.style.display = 'none';
     muteBtn.disabled = true;
@@ -616,11 +490,13 @@ function stopSession() {
     saveProgress();
     saveSessionRecording();
 
+    if (window.lunaAvatar) {
+        window.lunaAvatar.setState('idle');
+    }
+
     if (activeChallenge && !document.getElementById('challengeTitle')?.textContent?.includes('Complete')) {
         completeChallenge();
         addMessage(`Challenge complete! You earned ⚡${activeChallenge.xp} XP!`, 'ai');
-    } else if (!activeChallenge) {
-        addMessage('Great session! Keep practicing to improve your skills.', 'ai');
     }
 }
 
@@ -630,23 +506,28 @@ function toggleMute() {
     if (isMuted) {
         muteBtn.classList.add('active');
         setStatus('Muted');
+        if (recognition) {
+            try { recognition.stop(); } catch (e) { }
+        }
     } else {
         muteBtn.classList.remove('active');
         setStatus('🟢 Live — speak now!');
+        if (recognition) {
+            try { recognition.start(); } catch (e) { }
+        }
     }
 }
 
-// UI state management
 function setStatus(text) {
     const el = document.getElementById('micStatusText');
     const dot = document.querySelector('.mic-dot');
     if (el) el.textContent = text;
     if (dot) {
-        if (text.includes('error') || text.includes('denied') || text.includes('lost'))
+        if (text.includes('Error') || text.includes('denied') || text.includes('needed'))
             dot.style.background = '#ef4444';
-        else if (text.includes('Muted') || text.includes('ended') || text.includes('speaking'))
+        else if (text.includes('Muted') || text.includes('ended'))
             dot.style.background = '#9ca3af';
-        else if (text.includes('Reconnecting'))
+        else if (text.includes('thinking'))
             dot.style.background = '#fbbf24';
         else
             dot.style.background = '#22c55e';
@@ -658,7 +539,6 @@ function addMessage(text, type) {
         conversationLog.push({ text, type, time: new Date().toISOString() });
     }
 
-    // Feed user speech to confidence analyzer
     if (type === 'user' && confidenceAnalyzer) {
         confidenceAnalyzer.analyzeSpeech(text);
         updateConfidenceUI();
@@ -724,7 +604,6 @@ function saveProgress() {
 
 function saveSessionRecording() {
     if (conversationLog.length < 2) return;
-
     const elapsed = sessionStartTime ? Math.floor((Date.now() - sessionStartTime) / 1000) : 0;
     const session = {
         id: Date.now(),
@@ -741,10 +620,8 @@ function saveSessionRecording() {
     sessions.unshift(session);
     if (sessions.length > 20) sessions.pop();
     localStorage.setItem('fluentai_sessions', JSON.stringify(sessions));
-    console.log(`[Session] Saved: ${conversationLog.length} messages, ${elapsed}s`);
 }
 
-// Update live confidence metrics
 function updateConfidenceUI() {
     if (!confidenceAnalyzer) return;
     const data = confidenceAnalyzer.getConfidenceData();
@@ -762,52 +639,10 @@ function updateConfidenceUI() {
     if (gaugeText) { gaugeText.textContent = data.score; gaugeText.style.color = data.color; }
     if (confidenceLabel) { confidenceLabel.textContent = data.label; confidenceLabel.style.color = data.color; }
 
-    const tooltipSignals = document.getElementById('tooltipSignals');
-    if (tooltipSignals && data.signals) {
-        const signalNames = [
-            { key: 'fillerRatio', name: 'Filler Words', icon: '🗣️' },
-            { key: 'pace', name: 'Speech Pace', icon: '⏱️' },
-            { key: 'responseLength', name: 'Response Len', icon: '📏' },
-            { key: 'hesitation', name: 'Hesitation', icon: '⏸️' },
-            { key: 'vocabulary', name: 'Vocabulary', icon: '📚' }
-        ];
-        tooltipSignals.innerHTML = signalNames.map(s => {
-            const val = Math.round(data.signals[s.key] || 0);
-            const barColor = val >= 60 ? '#34d399' : val >= 35 ? '#fbbf24' : '#f87171';
-            return `<div class="ct-signal">
-                <span class="ct-signal-name">${s.icon} ${s.name}</span>
-                <div class="ct-signal-bar"><div class="ct-signal-fill" style="width:${val}%;background:${barColor}"></div></div>
-                <span class="ct-signal-value">${val}</span>
-            </div>`;
-        }).join('');
-    }
-
     const cpScore = document.getElementById('cpScore');
     const cpLevel = document.getElementById('cpLevel');
-    const cpSignals = document.getElementById('cpSignals');
-
     if (cpScore) { cpScore.textContent = data.score; cpScore.style.color = data.color; }
     if (cpLevel) { cpLevel.textContent = `${data.emoji} ${data.label}`; cpLevel.style.color = data.color; }
-
-    if (cpSignals && data.signals) {
-        const items = [
-            { key: 'fillerRatio', name: 'Fillers', icon: '🗣️' },
-            { key: 'pace', name: 'Pace', icon: '⏱️' },
-            { key: 'responseLength', name: 'Length', icon: '📏' },
-            { key: 'hesitation', name: 'Hesitation', icon: '⏸️' },
-            { key: 'vocabulary', name: 'Vocab', icon: '📚' }
-        ];
-        cpSignals.innerHTML = items.map(s => {
-            const val = Math.round(data.signals[s.key] || 0);
-            const color = val >= 60 ? '#34d399' : val >= 35 ? '#fbbf24' : '#f87171';
-            return `<div class="cp-signal-row">
-                <span class="cp-signal-icon">${s.icon}</span>
-                <span class="cp-signal-name">${s.name}</span>
-                <div class="cp-signal-bar"><div class="cp-signal-fill" style="width:${val}%;background:${color}"></div></div>
-                <span class="cp-signal-pct">${val}%</span>
-            </div>`;
-        }).join('');
-    }
 }
 
 function clearTranscript() {
@@ -815,17 +650,13 @@ function clearTranscript() {
     if (feedbackSection) feedbackSection.style.display = 'none';
 }
 
-// INIT
+// Event listeners
 startBtn.addEventListener('click', startSession);
 stopBtn.addEventListener('click', stopSession);
 muteBtn.addEventListener('click', toggleMute);
 if (clearBtn) clearBtn.addEventListener('click', clearTranscript);
-initSocket();
+
 initChallenge();
-if (typeof initSimliAvatar === 'function') {
-    initSimliAvatar();
-} else {
-    const fb = document.getElementById('avatarFallback');
-    if (fb) fb.style.display = 'flex';
+if (typeof initAnimatedAvatar === 'function') {
+    initAnimatedAvatar();
 }
-console.log('[INIT] FluentAI v14 — Professional AI Tutor + Rock-solid Deepgram');

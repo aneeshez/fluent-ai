@@ -1,6 +1,6 @@
 // Configuration
-const BACKEND_URL = 'http://localhost:5000';
-console.log('🔗 Backend URL:', BACKEND_URL);
+const BACKEND_URL = (window.location.origin && !window.location.origin.startsWith('file')) ? window.location.origin : 'http://localhost:8000';
+console.log('Backend URL:', BACKEND_URL);
 
 // DOM Elements
 const localVideo = document.getElementById('localVideo');
