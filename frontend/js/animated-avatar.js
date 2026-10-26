@@ -179,9 +179,9 @@ class AnimatedAvatar {
 
         // --- BACKGROUND ---
         const bgGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, this.w * 0.75);
-        bgGrad.addColorStop(0, '#243127');
-        bgGrad.addColorStop(0.6, '#1b281f');
-        bgGrad.addColorStop(1, '#131c16');
+        bgGrad.addColorStop(0, '#292d35');
+        bgGrad.addColorStop(0.6, '#1d2027');
+        bgGrad.addColorStop(1, '#15171c');
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, this.w, this.h);
 
@@ -190,7 +190,7 @@ class AnimatedAvatar {
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
             const pAlpha = p.alpha * (1 + this.speakAnim * 0.5);
-            ctx.fillStyle = `rgba(35, 116, 90, ${pAlpha})`;
+            ctx.fillStyle = `rgba(166, 187, 156, ${pAlpha * 0.6})`;
             ctx.fill();
         }
 
@@ -198,7 +198,7 @@ class AnimatedAvatar {
         const glowAlpha = 0.08 + this.speakAnim * 0.12 + this.listenAnim * 0.05 + this.happyAnim * 0.08;
         const bgGlow = ctx.createRadialGradient(cx, cy, 20, cx, cy, this.w * 0.5);
         bgGlow.addColorStop(0, `rgba(166, 187, 156, ${glowAlpha * 0.8})`);
-        bgGlow.addColorStop(0.5, `rgba(86, 130, 100, ${glowAlpha * 0.5})`);
+        bgGlow.addColorStop(0.5, `rgba(117, 129, 150, ${glowAlpha * 0.45})`);
         bgGlow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = bgGlow;
         ctx.fillRect(0, 0, this.w, this.h);
@@ -208,7 +208,7 @@ class AnimatedAvatar {
         const ringGlow = ctx.createRadialGradient(cx, cy, ringR - 5, cx, cy, ringR + 30);
         const rgAlpha = 0.1 + this.ringPulse * 0.3;
         ringGlow.addColorStop(0, `rgba(166, 187, 156, ${rgAlpha * 0.8})`);
-        ringGlow.addColorStop(0.6, `rgba(115, 144, 113, ${rgAlpha * 0.35})`);
+        ringGlow.addColorStop(0.6, `rgba(137, 151, 174, ${rgAlpha * 0.3})`);
         ringGlow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = ringGlow;
         ctx.fillRect(0, 0, this.w, this.h);
@@ -250,9 +250,9 @@ class AnimatedAvatar {
 
         // Background inside circle
         const innerBg = ctx.createRadialGradient(0, -10, 10, 0, 0, ringR);
-        innerBg.addColorStop(0, '#3b4737');
-        innerBg.addColorStop(0.5, '#2b392d');
-        innerBg.addColorStop(1, '#202c23');
+        innerBg.addColorStop(0, '#3a3f49');
+        innerBg.addColorStop(0.5, '#2d323b');
+        innerBg.addColorStop(1, '#242831');
         ctx.fillStyle = innerBg;
         ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
 
