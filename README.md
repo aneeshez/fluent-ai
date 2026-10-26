@@ -1,69 +1,100 @@
-# 🎓 FluentAI — AI English Communication Tutor
+# FluentAI — AI English Communication Tutor
 
-A real-time AI-powered English communication tutor with speaking practice, writing analysis, confidence detection, and structured challenges.
+An AI-powered English tutor that helps you practice speaking and writing. Talk with Luna (the AI tutor) in real-time, get instant feedback on your writing, and track your progress over time.
 
 ## Features
 
-- **🎤 Speaking Practice** — Talk with Luna (AI tutor) in real-time with live transcription
-- **🤖 Animated AI Avatar** — Canvas-based avatar that reacts to speaking/listening/thinking states
-- **🎯 Confidence Detection** — Analyzes 5 speech signals (fillers, pace, vocabulary, hesitation, response length)
-- **🏆 8 Structured Challenges** — Self-intro, describe home, food, storytelling, interview, debate, etc.
-- **✍️ Writing Analysis** — AI grammar/vocabulary/coherence scoring with detailed corrections
-- **📊 Dashboard** — XP, streaks, session recordings with playback, achievement tracking
+- **Speaking Practice** — Converse with Luna, an AI English tutor, using your microphone
+- **Animated AI Avatar** — Canvas-based avatar reacts when Luna is speaking, listening, or thinking
+- **Confidence Meter** — Tracks 5 speech signals (fillers, pace, vocabulary, hesitation, response length)
+- **8 Practice Challenges** — Self-introduction, describe your home, favorite food, storytelling, mock interview, debate, and more
+- **Writing Analysis** — Submit short essays and get grammar, vocabulary, and coherence scores with corrections
+- **Secure Accounts** — Django-managed email/password accounts and session-based login
+- **Saved Progress** — Speaking transcripts, challenge XP, writing feedback, and dashboard totals stored in SQLite
+- **Progress Dashboard** — Track XP, streaks, session history, and achievements
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | HTML, CSS, JavaScript (vanilla) |
-| Backend | Python Flask + Flask-SocketIO |
-| AI/LLM | Groq (LLaMA 3.3 70B) — FREE |
-| Speech-to-Text | Deepgram Nova-2 (WebSocket) — FREE |
-| Text-to-Speech | Edge-TTS (primary, free) + Deepgram Aura (fallback) |
-| Avatar | Canvas animated avatar with state reactions |
-| Database | SQLite via SQLAlchemy |
+| Frontend | HTML, CSS, Vanilla JavaScript |
+| Backend | Python + Django |
+| AI / LLM | Groq API (requires a Groq API key) |
+| Speech-to-Text | Web Speech API (built into supported browsers; no separate key) |
+| Text-to-Speech | Browser SpeechSynthesis API (built-in, free) |
+| Database | SQLite |
 
 ## Quick Start
 
 ### Prerequisites
-- Python 3.10+
-- ffmpeg (optional, for Edge-TTS audio conversion)
+- Python 3.10 or newer
 
-### 1. Backend
+### Setup
+
 ```bash
 cd backend
 python -m venv venv
 venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Mac/Linux
 pip install -r requirements.txt
-python app.py                # Runs on http://localhost:5000
 ```
 
-### 2. Open Browser
-Navigate to `http://localhost:5000` — Flask serves the frontend automatically.
+### Configure API Key
 
-## API Keys (in `backend/.env`)
-
-Only **2 free API keys** needed:
-
-| Service | Purpose | Get Key |
-|---------|---------|---------|
-| **Groq** | AI tutor responses | [console.groq.com](https://console.groq.com) |
-| **Deepgram** | Speech-to-text + TTS fallback | [console.deepgram.com](https://console.deepgram.com) |
-
-## Architecture
+Copy `backend/.env.example` to `backend/.env` and add your Groq key. Set a unique `DJANGO_SECRET_KEY` before deploying:
 
 ```
-User speaks → Mic → Deepgram WebSocket (real-time STT)
-                          ↓
-                   Transcript text
-                          ↓
-              ConfidenceAnalyzer (score + level)
-                          ↓
-              Socket.IO "text-input" → Flask backend
-                          ↓
-              Groq API (LLaMA 3.3 70B) → AI response
-                          ↓
-              Edge-TTS → PCM16 audio → Socket.IO "tts-audio"
-                          ↓
-              Browser plays audio + animated avatar lip-sync
+DJANGO_SECRET_KEY=replace-with-a-long-random-value
+DEBUG=True
+GROQ_API_KEY=your_key_here
+```
+
+Get a free key at [console.groq.com](https://console.groq.com)
+
+### Run
+
+```bash
+python manage.py migrate
+python manage.py runserver
+```
+
+Open `http://127.0.0.1:8000`. Speaking recognition works in supported browsers such as current Chrome and Edge; microphone access requires localhost or HTTPS. Create an account to save writing and progress.
+
+## Project Structure
+
+```
+fluent-ai/
+├── backend/              # Django project
+│   ├── fluent_ai/        # Django project settings and URL config
+│   ├── tutor/            # Main Django app (views, models, NLP)
+│   ├── requirements.txt
+│   └── manage.py
+└── frontend/             # Static HTML/CSS/JS files
+    ├── index.html        # Landing page
+    ├── practice.html     # Speaking practice
+    ├── writing.html      # Writing test
+    ├── dashboard.html    # Progress dashboard
+    ├── challenges.html   # Challenge picker
+    ├── about.html        # About page
+    ├── login.html        # Login page
+    ├── signup.html       # Signup page
+    ├── profile.html      # User profile
+    ├── css/              # Stylesheets
+    └── js/               # JavaScript modules
+```
+
+## How It Works
+
+```
+User speaks → Browser microphone
+                    ↓
+          Web Speech API (free, built-in)
+                    ↓
+           Transcript text sent to Django
+                    ↓
+          Groq API → Luna's AI response
+                    ↓
+     Browser SpeechSynthesis speaks the reply
+                    ↓
+       Animated avatar reacts + transcript shown
 ```

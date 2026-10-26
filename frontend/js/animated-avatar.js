@@ -1,4 +1,5 @@
 // Canvas-based animated avatar controller with emotional expressions
+// Pure animated character — no photo dependency
 
 const AvatarState = {
     IDLE: 'idle',
@@ -37,6 +38,15 @@ class AnimatedAvatar {
         this.ringPulse = 0;
         this.ringRotation = 0;
         this.wavePhase = 0;
+        this.blinkTimer = 0;
+        this.isBlinking = false;
+        this.blinkProgress = 0;
+        this.mouthOpenAmount = 0;
+        this.headTilt = 0;
+        this.eyePupilX = 0;
+        this.eyePupilY = 0;
+        this.pupilTargetX = 0;
+        this.pupilTargetY = 0;
 
         // Particles
         this.particles = [];
@@ -50,18 +60,6 @@ class AnimatedAvatar {
                 phase: Math.random() * Math.PI * 2
             });
         }
-
-        // Load the realistic human avatar image
-        this.photo = new Image();
-        this.photoLoaded = false;
-        this.photo.onload = () => {
-            this.photoLoaded = true;
-            console.log('[Avatar] ✅ Human photo loaded');
-        };
-        this.photo.onerror = () => {
-            console.warn('[Avatar] ⚠️ Photo failed to load, using fallback');
-        };
-        this.photo.src = 'images/luna-human.png';
 
         this.lastTime = performance.now();
         this.animate = this.animate.bind(this);
@@ -116,6 +114,53 @@ class AnimatedAvatar {
         // Wave phase for speaking bars
         this.wavePhase += dt * 0.008;
 
+        // Blinking
+        this.blinkTimer += dt;
+        if (!this.isBlinking && this.blinkTimer > 2500 + Math.random() * 2000) {
+            this.isBlinking = true;
+            this.blinkTimer = 0;
+            this.blinkProgress = 0;
+        }
+        if (this.isBlinking) {
+            this.blinkProgress += dt * 0.008;
+            if (this.blinkProgress >= 1) {
+                this.isBlinking = false;
+                this.blinkProgress = 0;
+            }
+        }
+
+        // Mouth animation for speaking
+        if (this.state === AvatarState.SPEAKING) {
+            this.mouthOpenAmount = 0.3 + Math.abs(Math.sin(performance.now() * 0.012)) * 0.7;
+        } else if (this.state === AvatarState.HAPPY || this.state === AvatarState.GREETING) {
+            this.mouthOpenAmount = lerp(this.mouthOpenAmount, 0.15, speed);
+        } else {
+            this.mouthOpenAmount = lerp(this.mouthOpenAmount, 0, speed * 2);
+        }
+
+        // Head tilt
+        if (this.state === AvatarState.LISTENING) {
+            this.headTilt = lerp(this.headTilt, Math.sin(performance.now() * 0.001) * 0.04, speed);
+        } else if (this.state === AvatarState.THINKING) {
+            this.headTilt = lerp(this.headTilt, 0.06, speed);
+        } else {
+            this.headTilt = lerp(this.headTilt, 0, speed);
+        }
+
+        // Eye pupil movement
+        if (this.state === AvatarState.THINKING) {
+            this.pupilTargetX = Math.sin(performance.now() * 0.002) * 3;
+            this.pupilTargetY = -2;
+        } else if (this.state === AvatarState.LISTENING) {
+            this.pupilTargetX = 0;
+            this.pupilTargetY = 1;
+        } else {
+            this.pupilTargetX = Math.sin(performance.now() * 0.0005) * 1;
+            this.pupilTargetY = 0;
+        }
+        this.eyePupilX = lerp(this.eyePupilX, this.pupilTargetX, speed * 2);
+        this.eyePupilY = lerp(this.eyePupilY, this.pupilTargetY, speed * 2);
+
         // Particles
         for (const p of this.particles) {
             p.y -= p.speed * (dt * 0.02);
@@ -159,7 +204,7 @@ class AnimatedAvatar {
         ctx.fillRect(0, 0, this.w, this.h);
 
         // --- OUTER RING GLOW ---
-        const ringR = Math.min(cx, cy) * 0.52;
+        const ringR = Math.min(cx, cy) * 0.48;
         const ringGlow = ctx.createRadialGradient(cx, cy, ringR - 5, cx, cy, ringR + 30);
         const rgAlpha = 0.1 + this.ringPulse * 0.3;
         ringGlow.addColorStop(0, `rgba(99, 102, 241, ${rgAlpha})`);
@@ -172,7 +217,6 @@ class AnimatedAvatar {
         ctx.save();
         ctx.translate(cx, cy);
 
-        // Draw ring segments for conic gradient effect
         const ringWidth = 2.5 + this.ringPulse * 2;
         const segments = 60;
         for (let i = 0; i < segments; i++) {
@@ -180,7 +224,6 @@ class AnimatedAvatar {
             const nextAngle = ((i + 1) / segments) * Math.PI * 2 + this.ringRotation;
             const t = i / segments;
 
-            // Color transitions around the ring
             const r = Math.floor(99 + Math.sin(t * Math.PI * 2) * 40);
             const g = Math.floor(102 + Math.sin(t * Math.PI * 2 + 2) * 30);
             const b = Math.floor(241 - Math.sin(t * Math.PI * 2 + 1) * 40);
@@ -200,82 +243,278 @@ class AnimatedAvatar {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // --- PHOTO CIRCLE (clipped) ---
+        // --- CLIP to circle for avatar ---
         ctx.beginPath();
         ctx.arc(0, 0, ringR - 4, 0, Math.PI * 2);
         ctx.clip();
 
-        if (this.photoLoaded) {
-            // Draw the realistic human photo
-            const imgSize = (ringR - 4) * 2;
+        // Background inside circle
+        const innerBg = ctx.createRadialGradient(0, -10, 10, 0, 0, ringR);
+        innerBg.addColorStop(0, '#2d2153');
+        innerBg.addColorStop(0.5, '#1a1035');
+        innerBg.addColorStop(1, '#0f0a1e');
+        ctx.fillStyle = innerBg;
+        ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
 
-            // Subtle breathing scale
-            const bScale = 1 + this.breathe * 0.008;
-            ctx.save();
-            ctx.scale(bScale, bScale);
+        // --- DRAW CHARACTER ---
+        ctx.save();
+        ctx.rotate(this.headTilt);
 
-            // Brightness/warmth shift based on state
-            if (this.happyAnim > 0.1) {
-                ctx.filter = `brightness(${1 + this.happyAnim * 0.08}) saturate(${1 + this.happyAnim * 0.15})`;
-            } else if (this.speakAnim > 0.1) {
-                ctx.filter = `brightness(${1 + this.speakAnim * 0.05})`;
-            }
+        // Breathing offset
+        const breathOffset = this.breathe * 2;
 
-            ctx.drawImage(this.photo, -imgSize / 2, -imgSize / 2, imgSize, imgSize);
-            ctx.restore();
+        // Scale for the character
+        const scale = ringR / 85;
 
-            // --- STATE OVERLAY EFFECTS ---
+        // === BODY / SHOULDERS ===
+        ctx.save();
+        ctx.translate(0, 28 * scale + breathOffset * 0.3);
 
-            // Speaking: subtle animated glow on face edges
-            if (this.speakAnim > 0.05) {
-                const speakGlow = ctx.createRadialGradient(0, 0, ringR * 0.5, 0, 0, ringR);
-                speakGlow.addColorStop(0, 'rgba(0,0,0,0)');
-                speakGlow.addColorStop(0.85, 'rgba(0,0,0,0)');
-                speakGlow.addColorStop(1, `rgba(99, 102, 241, ${this.speakAnim * 0.25})`);
-                ctx.fillStyle = speakGlow;
-                ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
-            }
+        // Shoulders
+        ctx.beginPath();
+        ctx.ellipse(0, 30 * scale, 65 * scale, 45 * scale, 0, Math.PI, 0, true);
+        const bodyGrad = ctx.createLinearGradient(0, -10 * scale, 0, 60 * scale);
+        bodyGrad.addColorStop(0, '#6366f1');
+        bodyGrad.addColorStop(1, '#4338ca');
+        ctx.fillStyle = bodyGrad;
+        ctx.fill();
 
-            // Listening: soft green tint on edges
-            if (this.listenAnim > 0.05) {
-                const listenGlow = ctx.createRadialGradient(0, 0, ringR * 0.6, 0, 0, ringR);
-                listenGlow.addColorStop(0, 'rgba(0,0,0,0)');
-                listenGlow.addColorStop(0.9, 'rgba(0,0,0,0)');
-                listenGlow.addColorStop(1, `rgba(16, 185, 129, ${this.listenAnim * 0.15})`);
-                ctx.fillStyle = listenGlow;
-                ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
-            }
-
-            // Thinking: subtle blue overlay
-            if (this.thinkAnim > 0.05) {
-                const thinkOverlay = ctx.createRadialGradient(0, 0, ringR * 0.3, 0, 0, ringR);
-                thinkOverlay.addColorStop(0, `rgba(99, 102, 241, ${this.thinkAnim * 0.04})`);
-                thinkOverlay.addColorStop(1, `rgba(99, 102, 241, ${this.thinkAnim * 0.1})`);
-                ctx.fillStyle = thinkOverlay;
-                ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
-            }
-
-            // Happy: warm golden tint
-            if (this.happyAnim > 0.05) {
-                const happyGlow = ctx.createRadialGradient(0, 0, ringR * 0.5, 0, 0, ringR);
-                happyGlow.addColorStop(0, 'rgba(0,0,0,0)');
-                happyGlow.addColorStop(0.85, 'rgba(0,0,0,0)');
-                happyGlow.addColorStop(1, `rgba(245, 158, 11, ${this.happyAnim * 0.15})`);
-                ctx.fillStyle = happyGlow;
-                ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
-            }
-
-        } else {
-            // Fallback while loading
-            ctx.fillStyle = '#1a1035';
-            ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            ctx.font = '14px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('Loading...', 0, 5);
-        }
+        // Collar / neckline detail
+        ctx.beginPath();
+        ctx.moveTo(-15 * scale, -5 * scale);
+        ctx.quadraticCurveTo(0, 10 * scale, 15 * scale, -5 * scale);
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1.5 * scale;
+        ctx.stroke();
 
         ctx.restore();
+
+        // === NECK ===
+        ctx.fillStyle = '#f0c5a8';
+        ctx.fillRect(-10 * scale, 15 * scale + breathOffset * 0.3, 20 * scale, 20 * scale);
+
+        // === HEAD ===
+        const headY = -15 * scale + breathOffset;
+
+        // Head shape (oval)
+        ctx.beginPath();
+        ctx.ellipse(0, headY, 38 * scale, 45 * scale, 0, 0, Math.PI * 2);
+        const skinGrad = ctx.createLinearGradient(0, headY - 45 * scale, 0, headY + 45 * scale);
+        skinGrad.addColorStop(0, '#fce7d6');
+        skinGrad.addColorStop(1, '#f0c5a8');
+        ctx.fillStyle = skinGrad;
+        ctx.fill();
+
+        // Cheek blush (rosy when happy/speaking)
+        const blushAlpha = 0.12 + this.happyAnim * 0.15 + this.speakAnim * 0.08;
+        ctx.beginPath();
+        ctx.ellipse(-24 * scale, headY + 12 * scale, 10 * scale, 7 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 130, 130, ${blushAlpha})`;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(24 * scale, headY + 12 * scale, 10 * scale, 7 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 130, 130, ${blushAlpha})`;
+        ctx.fill();
+
+        // === HAIR ===
+        // Main hair top
+        ctx.beginPath();
+        ctx.ellipse(0, headY - 28 * scale, 42 * scale, 30 * scale, 0, 0, Math.PI * 2);
+        const hairGrad = ctx.createLinearGradient(0, headY - 60 * scale, 0, headY - 10 * scale);
+        hairGrad.addColorStop(0, '#1a0a2e');
+        hairGrad.addColorStop(1, '#2d1b4e');
+        ctx.fillStyle = hairGrad;
+        ctx.fill();
+
+        // Hair sides
+        ctx.beginPath();
+        ctx.ellipse(-34 * scale, headY - 5 * scale, 14 * scale, 40 * scale, -0.15, 0, Math.PI * 2);
+        ctx.fillStyle = '#2d1b4e';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.ellipse(34 * scale, headY - 5 * scale, 14 * scale, 40 * scale, 0.15, 0, Math.PI * 2);
+        ctx.fillStyle = '#2d1b4e';
+        ctx.fill();
+
+        // Hair bangs
+        ctx.beginPath();
+        ctx.moveTo(-30 * scale, headY - 30 * scale);
+        ctx.quadraticCurveTo(-20 * scale, headY - 15 * scale, -8 * scale, headY - 22 * scale);
+        ctx.quadraticCurveTo(5 * scale, headY - 12 * scale, 15 * scale, headY - 25 * scale);
+        ctx.quadraticCurveTo(25 * scale, headY - 15 * scale, 30 * scale, headY - 28 * scale);
+        ctx.lineTo(40 * scale, headY - 42 * scale);
+        ctx.quadraticCurveTo(0, headY - 58 * scale, -38 * scale, headY - 42 * scale);
+        ctx.closePath();
+        ctx.fillStyle = '#2d1b4e';
+        ctx.fill();
+
+        // === EYEBROWS ===
+        const browLift = this.happyAnim * 3 * scale + this.listenAnim * 2 * scale;
+
+        // Left eyebrow
+        ctx.beginPath();
+        ctx.moveTo(-22 * scale, headY - 12 * scale - browLift);
+        ctx.quadraticCurveTo(-14 * scale, headY - 16 * scale - browLift, -6 * scale, headY - 12 * scale - browLift);
+        ctx.strokeStyle = '#2d1b4e';
+        ctx.lineWidth = 2.5 * scale;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Right eyebrow
+        ctx.beginPath();
+        ctx.moveTo(6 * scale, headY - 12 * scale - browLift);
+        ctx.quadraticCurveTo(14 * scale, headY - 16 * scale - browLift, 22 * scale, headY - 12 * scale - browLift);
+        ctx.stroke();
+
+        // === EYES ===
+        const eyeY = headY - 2 * scale;
+        const blinkSquash = this.isBlinking ? Math.sin(this.blinkProgress * Math.PI) : 0;
+        const eyeScaleY = 1 - blinkSquash * 0.9;
+
+        // Left eye white
+        ctx.save();
+        ctx.translate(-14 * scale, eyeY);
+        ctx.scale(1, eyeScaleY);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 9 * scale, 7 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        // Left iris
+        ctx.beginPath();
+        ctx.ellipse(this.eyePupilX * scale * 0.4, this.eyePupilY * scale * 0.4, 5 * scale, 5 * scale, 0, 0, Math.PI * 2);
+        const irisGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 5 * scale);
+        irisGrad.addColorStop(0, '#6366f1');
+        irisGrad.addColorStop(0.7, '#4338ca');
+        irisGrad.addColorStop(1, '#312e81');
+        ctx.fillStyle = irisGrad;
+        ctx.fill();
+
+        // Left pupil
+        ctx.beginPath();
+        ctx.ellipse(this.eyePupilX * scale * 0.4, this.eyePupilY * scale * 0.4, 2.5 * scale, 2.5 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#0f0a1e';
+        ctx.fill();
+
+        // Left eye shine
+        ctx.beginPath();
+        ctx.ellipse(-1.5 * scale + this.eyePupilX * scale * 0.2, -2 * scale, 1.8 * scale, 1.5 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.fill();
+        ctx.restore();
+
+        // Right eye white
+        ctx.save();
+        ctx.translate(14 * scale, eyeY);
+        ctx.scale(1, eyeScaleY);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 9 * scale, 7 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        // Right iris
+        ctx.beginPath();
+        ctx.ellipse(this.eyePupilX * scale * 0.4, this.eyePupilY * scale * 0.4, 5 * scale, 5 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = irisGrad;
+        ctx.fill();
+
+        // Right pupil
+        ctx.beginPath();
+        ctx.ellipse(this.eyePupilX * scale * 0.4, this.eyePupilY * scale * 0.4, 2.5 * scale, 2.5 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#0f0a1e';
+        ctx.fill();
+
+        // Right eye shine
+        ctx.beginPath();
+        ctx.ellipse(-1.5 * scale + this.eyePupilX * scale * 0.2, -2 * scale, 1.8 * scale, 1.5 * scale, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.fill();
+        ctx.restore();
+
+        // === NOSE ===
+        ctx.beginPath();
+        ctx.moveTo(0, headY + 4 * scale);
+        ctx.lineTo(-3 * scale, headY + 12 * scale);
+        ctx.quadraticCurveTo(0, headY + 14 * scale, 3 * scale, headY + 12 * scale);
+        ctx.strokeStyle = 'rgba(180, 130, 100, 0.4)';
+        ctx.lineWidth = 1.5 * scale;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // === MOUTH ===
+        const mouthY = headY + 22 * scale;
+        const mouthOpen = this.mouthOpenAmount;
+        const smileAmount = this.happyAnim * 0.6 + this.listenAnim * 0.3;
+
+        if (mouthOpen > 0.1) {
+            // Open mouth (speaking)
+            const mouthW = (10 + mouthOpen * 6) * scale;
+            const mouthH = (3 + mouthOpen * 8) * scale;
+
+            ctx.beginPath();
+            ctx.ellipse(0, mouthY, mouthW, mouthH, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#8b3a3a';
+            ctx.fill();
+
+            // Tongue hint
+            if (mouthOpen > 0.4) {
+                ctx.beginPath();
+                ctx.ellipse(0, mouthY + mouthH * 0.3, mouthW * 0.5, mouthH * 0.4, 0, 0, Math.PI);
+                ctx.fillStyle = '#c96b6b';
+                ctx.fill();
+            }
+
+            // Teeth hint
+            ctx.beginPath();
+            ctx.rect(-mouthW * 0.6, mouthY - mouthH * 0.9, mouthW * 1.2, mouthH * 0.35);
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.fill();
+        } else {
+            // Closed mouth — smile
+            ctx.beginPath();
+            ctx.moveTo(-10 * scale, mouthY - smileAmount * 3 * scale);
+            ctx.quadraticCurveTo(0, mouthY + (3 + smileAmount * 6) * scale, 10 * scale, mouthY - smileAmount * 3 * scale);
+            ctx.strokeStyle = '#c97b6b';
+            ctx.lineWidth = 2.2 * scale;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+
+        ctx.restore(); // end head tilt
+
+        // --- STATE OVERLAY ---
+        // Speaking glow
+        if (this.speakAnim > 0.05) {
+            const speakGlow = ctx.createRadialGradient(0, 0, ringR * 0.5, 0, 0, ringR);
+            speakGlow.addColorStop(0, 'rgba(0,0,0,0)');
+            speakGlow.addColorStop(0.85, 'rgba(0,0,0,0)');
+            speakGlow.addColorStop(1, `rgba(99, 102, 241, ${this.speakAnim * 0.2})`);
+            ctx.fillStyle = speakGlow;
+            ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
+        }
+
+        // Listening glow
+        if (this.listenAnim > 0.05) {
+            const listenGlow = ctx.createRadialGradient(0, 0, ringR * 0.6, 0, 0, ringR);
+            listenGlow.addColorStop(0, 'rgba(0,0,0,0)');
+            listenGlow.addColorStop(0.9, 'rgba(0,0,0,0)');
+            listenGlow.addColorStop(1, `rgba(16, 185, 129, ${this.listenAnim * 0.12})`);
+            ctx.fillStyle = listenGlow;
+            ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
+        }
+
+        // Happy glow
+        if (this.happyAnim > 0.05) {
+            const happyGlow = ctx.createRadialGradient(0, 0, ringR * 0.5, 0, 0, ringR);
+            happyGlow.addColorStop(0, 'rgba(0,0,0,0)');
+            happyGlow.addColorStop(0.85, 'rgba(0,0,0,0)');
+            happyGlow.addColorStop(1, `rgba(245, 158, 11, ${this.happyAnim * 0.12})`);
+            ctx.fillStyle = happyGlow;
+            ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
+        }
+
+        ctx.restore(); // end translate
 
         // --- NAME & STATUS (below the ring) ---
         const textY = cy + ringR + 18;
@@ -287,7 +526,6 @@ class AnimatedAvatar {
 
         // Status text changes based on state
         ctx.font = '500 11px Inter, sans-serif';
-        ctx.letterSpacing = '1.5px';
         let statusText = 'AI COMMUNICATION TUTOR';
         let statusColor = 'rgba(255,255,255,0.4)';
 
@@ -301,7 +539,7 @@ class AnimatedAvatar {
             statusText = '● THINKING...';
             statusColor = 'rgba(99, 102, 241, 0.8)';
         } else if (this.state === AvatarState.HAPPY || this.state === AvatarState.GREETING) {
-            statusText = '😊 HELLO!';
+            statusText = '● HELLO!';
             statusColor = 'rgba(245, 158, 11, 0.8)';
         }
 
@@ -413,7 +651,7 @@ function initAnimatedAvatar() {
         }
     }, 2500);
 
-    console.log('[Avatar] ✅ Animated human avatar initialized');
+    console.log('[Avatar] Animated avatar initialized');
 }
 
 // Convenience functions for practice.js
@@ -427,11 +665,10 @@ function avatarIdle() { if (lunaAvatar) lunaAvatar.setState(AvatarState.IDLE); }
 function startAvatarSpeaking() { if (lunaAvatar) lunaAvatar.setState(AvatarState.SPEAKING); }
 function stopAvatarSpeaking() { if (lunaAvatar) lunaAvatar.setState(AvatarState.LISTENING); }
 
-console.log('[Avatar] Human avatar module loaded');
+console.log('[Avatar] Animated avatar module loaded');
 
-// Auto-initialize when DOM is ready — animated avatar is the primary avatar
+// Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Init immediately — animated avatar is the default
     setTimeout(() => {
         initAnimatedAvatar();
     }, 300);

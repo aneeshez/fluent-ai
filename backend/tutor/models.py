@@ -1,8 +1,16 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
 
 class UserProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="fluent_profile",
+        null=True,
+        blank=True,
+    )
     name = models.CharField(max_length=100, default='Guest')
     email = models.EmailField(unique=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -16,6 +24,8 @@ class PracticeSession(models.Model):
     challenge = models.CharField(max_length=50, blank=True, null=True)
     started_at = models.DateTimeField(default=timezone.now)
     ended_at = models.DateTimeField(null=True, blank=True)
+    duration_seconds = models.PositiveIntegerField(default=0)
+    xp_earned = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"Session {self.id} - {self.challenge or 'Free Talk'}"
@@ -39,3 +49,19 @@ class Feedback(models.Model):
 
     def __str__(self):
         return f"Feedback on Transcript #{self.transcript_id}"
+
+
+class WritingSubmission(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="writing_submissions",
+    )
+    prompt = models.TextField(blank=True)
+    text = models.TextField()
+    result_json = models.JSONField(default=dict)
+    xp_earned = models.PositiveIntegerField(default=40)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"Writing submission #{self.pk} by {self.user.email}"

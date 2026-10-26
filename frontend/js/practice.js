@@ -32,15 +32,13 @@ let silenceTimer = null;
 let accumulatedTranscript = '';
 
 // Backend endpoint
-const BACKEND = (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file'))
-    ? window.location.origin
-    : 'http://localhost:8000';
+const BACKEND = '';
 
 // Challenge configuration
 const CHALLENGES = {
     self_intro: {
         id: 'self_intro',
-        title: '🗣️ Self Introduction',
+        title: 'Self Introduction',
         description: 'Practice introducing yourself: name, background, hobbies, and goals.',
         timeLimit: 120,
         xp: 20,
@@ -49,7 +47,7 @@ const CHALLENGES = {
     },
     describe_home: {
         id: 'describe_home',
-        title: '🏠 Describe Your Home',
+        title: 'Describe Your Home',
         description: 'Describe your home: rooms, furniture, and what you like about it.',
         timeLimit: 180,
         xp: 25,
@@ -58,7 +56,7 @@ const CHALLENGES = {
     },
     favorite_food: {
         id: 'favorite_food',
-        title: '🍽️ Favorite Food',
+        title: 'Favorite Food',
         description: 'Describe your favorite dish, how it\'s made, and why you love it.',
         timeLimit: 180,
         xp: 35,
@@ -67,7 +65,7 @@ const CHALLENGES = {
     },
     story_telling: {
         id: 'story_telling',
-        title: '📖 Story Telling',
+        title: 'Story Telling',
         description: 'Tell a short story about an interesting experience you had.',
         timeLimit: 240,
         xp: 40,
@@ -76,7 +74,7 @@ const CHALLENGES = {
     },
     job_interview: {
         id: 'job_interview',
-        title: '💼 Mock Interview',
+        title: 'Mock Interview',
         description: 'Practice answering common job interview questions professionally.',
         timeLimit: 300,
         xp: 75,
@@ -85,7 +83,7 @@ const CHALLENGES = {
     },
     morning_routine: {
         id: 'morning_routine',
-        title: '☀️ Morning Routine',
+        title: 'Morning Routine',
         description: 'Describe your typical morning step by step.',
         timeLimit: 180,
         xp: 50,
@@ -94,7 +92,7 @@ const CHALLENGES = {
     },
     interview_prep: {
         id: 'interview_prep',
-        title: '🎯 Interview Preparation',
+        title: 'Interview Preparation',
         description: 'Learn interview techniques: STAR method, elevator pitch, power words.',
         timeLimit: 300,
         xp: 60,
@@ -103,7 +101,7 @@ const CHALLENGES = {
     },
     debate: {
         id: 'debate',
-        title: '🎙️ Debate Practice',
+        title: 'Debate Practice',
         description: 'Argue for or against a topic. Practice persuasion and reasoning.',
         timeLimit: 300,
         xp: 80,
@@ -131,15 +129,15 @@ function showChallengeBanner() {
     const convTitle = document.querySelector('.transcript-header h3');
 
     if (banner) banner.style.display = 'block';
-    if (titleEl) titleEl.textContent = `🎯 ${activeChallenge.title}`;
-    if (xpEl) xpEl.textContent = `⚡ ${activeChallenge.xp} XP`;
+    if (titleEl) titleEl.textContent = activeChallenge.title;
+    if (xpEl) xpEl.textContent = `${activeChallenge.xp} XP`;
     if (descEl) descEl.textContent = activeChallenge.description;
     if (limitEl) {
         const m = Math.floor(activeChallenge.timeLimit / 60);
         const s = activeChallenge.timeLimit % 60;
         limitEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
     }
-    if (convTitle) convTitle.textContent = `🎯 ${activeChallenge.title}`;
+    if (convTitle) convTitle.textContent = activeChallenge.title;
 }
 
 function updateChallengeTimer() {
@@ -160,7 +158,7 @@ function updateChallengeTimer() {
     }
 
     if (remaining <= 0 && isRecording) {
-        addMessage(`⏰ Time's up! Challenge complete!`, 'system');
+        addMessage("Time's up! Challenge complete!", 'system');
         completeChallenge();
         stopSession();
     }
@@ -185,13 +183,12 @@ function completeChallenge() {
         banner.style.borderColor = 'rgba(16,185,129,0.4)';
         const titleEl = document.getElementById('challengeTitle');
         const xpEl = document.getElementById('challengeXP');
-        if (titleEl) titleEl.textContent = '✅ Challenge Complete!';
-        if (xpEl) xpEl.textContent = `⚡ +${activeChallenge.xp} XP Earned!`;
+        if (titleEl) titleEl.textContent = 'Challenge Complete!';
+        if (xpEl) xpEl.textContent = `+${activeChallenge.xp} XP Earned!`;
     }
 }
 
 // DOM Elements
-const localVideo = document.getElementById('localVideo');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const muteBtn = document.getElementById('muteBtn');
@@ -261,7 +258,7 @@ function speak(text) {
 function onSpeakingDone() {
     isAISpeaking = false;
     if (aiStatus) aiStatus.textContent = 'Listening...';
-    setStatus('🟢 Live — speak now!');
+    setStatus('Live — speak now');
     if (confidenceAnalyzer) confidenceAnalyzer.markAIFinished();
 
     if (window.lunaAvatar) {
@@ -283,7 +280,7 @@ function initSpeechRecognition() {
     rec.lang = 'en-US';
 
     rec.onstart = () => {
-        setStatus('🟢 Live — speak now!');
+        setStatus('Live — speak now');
         if (aiStatus) aiStatus.textContent = 'Listening...';
         if (connectionDot) { connectionDot.classList.add('connected'); connectionDot.classList.remove('disconnected'); }
         if (connectionText) connectionText.textContent = 'Ready';
@@ -343,6 +340,7 @@ async function sendToDjangoTutor(text) {
     if (!text?.trim() || isAIThinking) return;
 
     isAIThinking = true;
+    if (feedbackSection) feedbackSection.style.display = 'none';
     if (aiStatus) aiStatus.textContent = 'Thinking...';
     setStatus('Luna thinking...');
 
@@ -364,19 +362,13 @@ async function sendToDjangoTutor(text) {
     }
 
     try {
-        const response = await fetch(`${BACKEND}/api/chat/`, {
+        const data = await FluentAPI.request(`${BACKEND}/api/chat/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
         });
-
-        if (!response.ok) {
-            throw new Error(`Server returned ${response.status}`);
-        }
-
-        const data = await response.json();
         isAIThinking = false;
 
         if (data.session_id) {
@@ -387,7 +379,7 @@ async function sendToDjangoTutor(text) {
         addMessage(reply, 'ai');
         speak(reply);
 
-        if (data.corrected_text || (data.tips && data.tips.length)) {
+        if ((data.corrected_text && data.corrected_text !== text.trim()) || (data.tips && data.tips.length)) {
             showFeedback(data);
         }
 
@@ -404,18 +396,28 @@ async function sendToDjangoTutor(text) {
 // Session control
 async function startSession() {
     if (isRecording) return;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        setStatus('Speech recognition is unavailable in this browser');
+        alert('Speaking practice needs browser speech recognition. Please open FluentAI in the latest Chrome or Microsoft Edge.');
+        return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+        setStatus('Microphone access requires localhost or HTTPS');
+        alert('Open FluentAI at localhost or on an HTTPS site to use your microphone.');
+        return;
+    }
     setStatus('Starting...');
 
     try {
         mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
             audio: true
         });
-        localVideo.srcObject = mediaStream;
 
         isRecording = true;
         isAIThinking = false;
         sessionStartTime = Date.now();
+        currentSessionId = null;
         wordCount = 0;
         conversationLog = [];
         accumulatedTranscript = '';
@@ -456,12 +458,13 @@ async function startSession() {
 
     } catch (err) {
         console.error('[Session] Access denied:', err);
-        setStatus('Camera/Mic permission needed');
-        alert('Please allow camera and microphone access to practice speaking.');
+        setStatus('Microphone permission needed');
+        alert('Please allow microphone access to practice speaking.');
     }
 }
 
 function stopSession() {
+    const finishedSessionId = currentSessionId;
     isRecording = false;
     isAIThinking = false;
     if ('speechSynthesis' in window) {
@@ -475,7 +478,7 @@ function stopSession() {
         mediaStream.getTracks().forEach(t => t.stop());
         mediaStream = null;
     }
-    localVideo.srcObject = null;
+
     clearInterval(sessionTimer);
     if (challengeTimerInterval) {
         clearInterval(challengeTimerInterval);
@@ -489,6 +492,12 @@ function stopSession() {
     setStatus('Session ended');
     saveProgress();
     saveSessionRecording();
+    if (finishedSessionId) {
+        FluentAPI.request('/api/session/finish/', {
+            method: 'POST',
+            body: JSON.stringify({ session_id: finishedSessionId })
+        }).catch(error => console.error('[Session] Could not save completion:', error));
+    }
 
     if (window.lunaAvatar) {
         window.lunaAvatar.setState('idle');
@@ -496,13 +505,15 @@ function stopSession() {
 
     if (activeChallenge && !document.getElementById('challengeTitle')?.textContent?.includes('Complete')) {
         completeChallenge();
-        addMessage(`Challenge complete! You earned ⚡${activeChallenge.xp} XP!`, 'ai');
+        addMessage(`Challenge complete! You earned ${activeChallenge.xp} XP!`, 'ai');
     }
 }
 
 function toggleMute() {
     isMuted = !isMuted;
-    muteBtn.textContent = isMuted ? '🔇' : '🎤';
+    muteBtn.innerHTML = isMuted
+        ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>'
+        : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
     if (isMuted) {
         muteBtn.classList.add('active');
         setStatus('Muted');
@@ -511,7 +522,7 @@ function toggleMute() {
         }
     } else {
         muteBtn.classList.remove('active');
-        setStatus('🟢 Live — speak now!');
+        setStatus('Live — speak now');
         if (recognition) {
             try { recognition.start(); } catch (e) { }
         }
@@ -577,9 +588,14 @@ function clearInterim() {
 }
 
 function showFeedback(data) {
-    if (feedbackSection) feedbackSection.style.display = 'block';
-    if (data.corrected_text && correctedText) correctedText.textContent = data.corrected_text;
-    if (data.tips?.length && feedbackTips) feedbackTips.innerHTML = data.tips.map(t => `• ${t}`).join('<br>');
+    const hasCorrection = Boolean(data.corrected_text && correctedText && data.corrected_text !== conversationLog.at(-2)?.text);
+    const correctionItem = correctedText?.closest('.feedback-item');
+    const tipsItem = feedbackTips?.closest('.feedback-item');
+    if (correctionItem) correctionItem.hidden = !hasCorrection;
+    if (tipsItem) tipsItem.hidden = !data.tips?.length;
+    if (hasCorrection) correctedText.textContent = data.corrected_text;
+    if (data.tips?.length && feedbackTips) feedbackTips.textContent = data.tips.join('\n');
+    if (feedbackSection) feedbackSection.style.display = hasCorrection || Boolean(data.tips?.length) ? 'block' : 'none';
 }
 
 function countWords(text) {

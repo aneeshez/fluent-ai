@@ -5,14 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Writing Test - FluentAI</title>
+    <link rel="icon" href="images/logo-icon.jpg" type="image/jpeg">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-    <!-- Socket.IO -->
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/design-system.css">
@@ -248,8 +248,8 @@
         <nav class="nav" id="navbar">
             <div class="nav-container">
                 <a href="index.html" class="nav-logo">
-                    <div class="nav-logo-icon">🎓</div>
-                    <span class="nav-logo-text">FluentAI</span>
+                    <div class="nav-logo-icon"><img src="images/logo.jpg" alt="F" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"></div>
+                    <span class="nav-logo-text">Fluent<span>AI</span></span>
                 </a>
 
                 <div class="nav-links">
@@ -275,15 +275,15 @@
                     <div class="writing-main">
                         <!-- Prompt -->
                         <div class="glass-card prompt-card">
-                            <div class="prompt-label">📝 Today's Writing Prompt</div>
+                            <div class="prompt-label"> Today's Writing Prompt</div>
                             <p class="prompt-text" id="promptText">
                                 Describe a memorable trip you have taken. Where did you go? What did you do? What made
                                 it special?
                             </p>
                             <div class="prompt-meta">
-                                <span>⏱️ 20 minutes</span>
-                                <span>📊 150-250 words</span>
-                                <span>⚡ 40 XP</span>
+                                <span> 20 minutes</span>
+                                <span> 150-250 words</span>
+                                <span>✦ 40 XP</span>
                             </div>
                         </div>
 
@@ -298,9 +298,9 @@
                                 placeholder="Start writing here... Express your thoughts clearly and use proper grammar."></textarea>
 
                             <div class="submit-bar">
-                                <button class="btn btn-ghost" id="newPromptBtn">🔄 New Prompt</button>
+                                <button class="btn btn-ghost" id="newPromptBtn" style="display:inline-flex;align-items:center;gap:6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>New Prompt</button>
                                 <div style="display: flex; gap: var(--space-3);">
-                                    <button class="btn btn-secondary" id="saveBtn">💾 Save Draft</button>
+                                    <button class="btn btn-secondary" id="saveBtn" style="display:inline-flex;align-items:center;gap:6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Draft</button>
                                     <button class="btn btn-primary" id="submitBtn">Submit for Review</button>
                                 </div>
                             </div>
@@ -310,12 +310,12 @@
                     <!-- Results Panel -->
                     <div class="glass-card-static results-panel">
                         <div class="results-header">
-                            <h3>📊 Analysis Results</h3>
+                            <h3>Analysis Results</h3>
                         </div>
 
                         <div class="results-content" id="resultsContent">
                             <div class="results-empty">
-                                <div class="results-empty-icon">✍️</div>
+                                <div class="results-empty-icon"></div>
                                 <p>Submit your writing to receive AI feedback</p>
                                 <p style="font-size: var(--text-sm); margin-top: var(--space-2);">
                                     Get scores for grammar, vocabulary, coherence, and more
@@ -328,226 +328,9 @@
         </main>
     </div>
 
-    <script>
-        // Check auth
-        const user = JSON.parse(localStorage.getItem('fluentai_user') || 'null');
-        if (!user) {
-            window.location.href = 'login.html';
-        }
-
-        if (user) {
-            const avatar = document.getElementById('userAvatar');
-            if (user.picture) {
-                avatar.innerHTML = `<img src="${user.picture}" alt="">`;
-            } else {
-                avatar.textContent = (user.name || 'U').charAt(0).toUpperCase();
-            }
-        }
-
-        // Elements
-        const writingArea = document.getElementById('writingArea');
-        const wordCounter = document.getElementById('wordCounter');
-        const submitBtn = document.getElementById('submitBtn');
-        const saveBtn = document.getElementById('saveBtn');
-        const newPromptBtn = document.getElementById('newPromptBtn');
-        const resultsContent = document.getElementById('resultsContent');
-        const promptText = document.getElementById('promptText');
-
-        // Prompts
-        const prompts = [
-            "Describe a memorable trip you have taken. Where did you go? What did you do? What made it special?",
-            "Write about a person who has influenced your life significantly. How have they impacted you?",
-            "Do you think technology has made our lives better or worse? Explain your view with examples.",
-            "Describe your ideal job. What would you do? Where would you work? Why does this appeal to you?",
-            "Write about a challenge you overcame. What was difficult? How did you succeed?",
-            "If you could change one thing about your city/town, what would it be and why?",
-            "Describe a book, movie, or show that changed your perspective on something.",
-            "Write about the importance of learning English in today's world."
-        ];
-
-        // Word count
-        writingArea.addEventListener('input', () => {
-            const text = writingArea.value.trim();
-            const words = text ? text.split(/\s+/).length : 0;
-            wordCounter.textContent = `${words} words`;
-
-            if (words < 150) {
-                wordCounter.className = 'word-counter';
-            } else if (words <= 250) {
-                wordCounter.className = 'word-counter success';
-            } else {
-                wordCounter.className = 'word-counter warning';
-            }
-        });
-
-        // New prompt
-        newPromptBtn.addEventListener('click', () => {
-            const current = promptText.textContent;
-            let newPrompt;
-            do {
-                newPrompt = prompts[Math.floor(Math.random() * prompts.length)];
-            } while (newPrompt === current);
-            promptText.textContent = newPrompt;
-        });
-
-        // Save draft
-        saveBtn.addEventListener('click', () => {
-            localStorage.setItem('fluentai_writing_draft', writingArea.value);
-            alert('Draft saved!');
-        });
-
-        // Load draft
-        const draft = localStorage.getItem('fluentai_writing_draft');
-        if (draft) writingArea.value = draft;
-
-        // Submit — real AI analysis
-        submitBtn.addEventListener('click', async () => {
-            const text = writingArea.value.trim();
-            if (!text || text.split(/\s+/).length < 20) {
-                alert('Please write at least 20 words before submitting.');
-                return;
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Analyzing...';
-
-                const backendUrl = (window.location.origin && !window.location.origin.startsWith('file')) ? '' : 'http://localhost:8000';
-                const res = await fetch(`${backendUrl}/api/analyze-writing/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: text,
-                        prompt: promptText.textContent.trim()
-                    })
-                });
-
-                if (!res.ok) {
-                    const err = await res.json();
-                    alert(err.error || 'Analysis failed. Try again.');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Submit for Review';
-                    return;
-                }
-
-                const r = await res.json();
-                const grammar = r.grammar_score || 70;
-                const vocab = r.vocabulary_score || 70;
-                const coherence = r.coherence_score || 70;
-                const task = r.task_score || 70;
-                const overall = Math.round((grammar + vocab + coherence + task) / 4);
-
-                // Build errors HTML
-                let errorsHTML = '';
-                if (r.errors && r.errors.length > 0) {
-                    errorsHTML = `
-                    <div class="glass-card feedback-card" style="border-left: 3px solid #ef4444;">
-                        <div class="feedback-title" style="color: #f87171;">🔴 Grammar Errors Found (${r.errors.length})</div>
-                        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-                            ${r.errors.map(e => `
-                                <div style="font-size:13px;line-height:1.6;">
-                                    <span style="text-decoration:line-through;color:#ef4444;">${e.original}</span>
-                                    → <span style="color:#22c55e;font-weight:500;">${e.corrected}</span>
-                                    <br><span style="font-size:11px;color:rgba(255,255,255,0.4);font-style:italic;">${e.rule || ''}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>`;
-                }
-
-                // Build strengths
-                const strengthsList = (r.strengths || []).map(s => `<div style="font-size:13px;line-height:1.6;padding:2px 0;">✅ ${s}</div>`).join('');
-
-                // Build improvements
-                const improvementsList = (r.improvements || []).map(s => `<div style="font-size:13px;line-height:1.6;padding:2px 0;">💡 ${s}</div>`).join('');
-
-                // Build corrected text
-                let correctedHTML = '';
-                if (r.corrected_text && r.corrected_text !== text) {
-                    correctedHTML = `
-                    <div class="glass-card feedback-card" style="border-left: 3px solid #6366f1;">
-                        <div class="feedback-title" style="color: #818cf8;">📝 Corrected Version</div>
-                        <div class="feedback-text" style="line-height:1.8;white-space:pre-wrap;">${r.corrected_text}</div>
-                    </div>`;
-                }
-
-                // Determine score color
-                let scoreColor = '#ef4444';
-                if (overall >= 80) scoreColor = '#22c55e';
-                else if (overall >= 60) scoreColor = '#f59e0b';
-
-                resultsContent.innerHTML = `
-                    <div class="score-circle animate-scale-in" style="background: conic-gradient(${scoreColor} ${overall * 3.6}deg, rgba(255,255,255,0.1) 0deg);">
-                        <div style="width:100px;height:100px;border-radius:50%;background:var(--bg-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                            <div class="score-value" style="color:${scoreColor};">${overall}</div>
-                            <div class="score-label">Overall</div>
-                        </div>
-                    </div>
-
-                    <div class="score-breakdown">
-                        <div class="score-item">
-                            <span class="score-item-label">Grammar</span>
-                            <div class="score-item-bar"><div class="score-item-fill" style="width:${grammar}%;background:${grammar >= 80 ? '#22c55e' : grammar >= 60 ? '#f59e0b' : '#ef4444'};"></div></div>
-                            <span class="score-item-value">${grammar}</span>
-                        </div>
-                        <div class="score-item">
-                            <span class="score-item-label">Vocabulary</span>
-                            <div class="score-item-bar"><div class="score-item-fill" style="width:${vocab}%;background:${vocab >= 80 ? '#22c55e' : vocab >= 60 ? '#f59e0b' : '#ef4444'};"></div></div>
-                            <span class="score-item-value">${vocab}</span>
-                        </div>
-                        <div class="score-item">
-                            <span class="score-item-label">Coherence</span>
-                            <div class="score-item-bar"><div class="score-item-fill" style="width:${coherence}%;background:${coherence >= 80 ? '#22c55e' : coherence >= 60 ? '#f59e0b' : '#ef4444'};"></div></div>
-                            <span class="score-item-value">${coherence}</span>
-                        </div>
-                        <div class="score-item">
-                            <span class="score-item-label">Task Response</span>
-                            <div class="score-item-bar"><div class="score-item-fill" style="width:${task}%;background:${task >= 80 ? '#22c55e' : task >= 60 ? '#f59e0b' : '#ef4444'};"></div></div>
-                            <span class="score-item-value">${task}</span>
-                        </div>
-                    </div>
-
-                    ${errorsHTML}
-
-                    <div class="glass-card feedback-card">
-                        <div class="feedback-title">✅ Strengths</div>
-                        <div class="feedback-text">${strengthsList || 'Good effort!'}</div>
-                    </div>
-
-                    <div class="glass-card feedback-card">
-                        <div class="feedback-title">💡 Areas to Improve</div>
-                        <div class="feedback-text">${improvementsList || 'Keep practicing!'}</div>
-                    </div>
-
-                    ${correctedHTML}
-
-                    <div class="glass-card feedback-card" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2);">
-                        <div class="feedback-title" style="color: var(--accent-success);">⚡ +40 XP Earned!</div>
-                        <div class="feedback-text">Great work completing this writing exercise!</div>
-                    </div>
-                `;
-
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit for Review';
-
-                // Save progress
-                const progress = JSON.parse(localStorage.getItem('fluentai_progress') || '{}');
-                progress.xp = (progress.xp || 0) + 40;
-                progress.writingsCompleted = (progress.writingsCompleted || 0) + 1;
-                localStorage.setItem('fluentai_progress', JSON.stringify(progress));
-                localStorage.removeItem('fluentai_writing_draft');
-
-            } catch (err) {
-                console.error('Writing analysis error:', err);
-                alert('Failed to connect to server. Make sure the backend is running.');
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit for Review';
-            }
-        });
-
-        document.getElementById('navUser')?.addEventListener('click', () => {
-            window.location.href = 'profile.html';
-        });
-    </script>
+    <script src="js/api.js"></script>
+    <script src="js/writing.js"></script>
+    <script src="js/navigation.js"></script>
 </body>
 
 </html>

@@ -2,6 +2,7 @@
 Conversational NLP module powered by Groq.
 Handles dialogue generation, context memory, and feedback.
 """
+import json
 import logging
 import os
 
@@ -135,6 +136,12 @@ def analyze_text(transcript, challenge=None, confidence_level=None, conversation
     # Append confidence adaptation
     if confidence_level and confidence_level in CONFIDENCE_PROMPTS:
         system_prompt += CONFIDENCE_PROMPTS[confidence_level]
+    system_prompt += (
+        "\n\nReturn only a JSON object with exactly these keys: "
+        '"teacher_response" (a natural spoken reply of 1-2 short sentences), '
+        '"corrected_text" (the full transcript corrected only when needed; otherwise the original), '
+        'and "tips" (zero or one concise, actionable language tip).'
+    )
 
     # Build messages with conversation history
     messages = [{"role": "system", "content": system_prompt}]
@@ -152,22 +159,43 @@ def analyze_text(transcript, challenge=None, confidence_level=None, conversation
         comp = client.chat.completions.create(
             model="qwen/qwen3.8-27b",
             messages=messages,
-            max_tokens=150,
+            response_format={"type": "json_object"},
+            max_tokens=300,
             temperature=0.7,
         )
-        reply = comp.choices[0].message.content or "That's interesting! Tell me more about that."
-        return {"teacher_response": reply.strip(), "corrected_text": transcript, "tips": []}
+        reply = comp.choices[0].message.content or "{}"
+        return _parse_tutor_reply(reply, transcript)
     except Exception as e:
         logger.error(f"Groq error: {e}")
         try:
             comp = client.chat.completions.create(
                 model="openai/gpt-oss-120b",
                 messages=messages,
+                response_format={"type": "json_object"},
                 max_tokens=150,
                 temperature=0.7,
             )
-            reply = comp.choices[0].message.content or "Nice! Keep going!"
-            return {"teacher_response": reply.strip(), "corrected_text": transcript, "tips": []}
+            reply = comp.choices[0].message.content or "{}"
+            return _parse_tutor_reply(reply, transcript)
         except Exception as e2:
             logger.error(f"Fallback Groq error: {e2}")
             return {"teacher_response": "Nice effort! Keep practicing, you're doing well!", "corrected_text": transcript, "tips": []}
+
+
+def _parse_tutor_reply(reply, transcript):
+    try:
+        result = json.loads(reply)
+        teacher_response = str(result.get("teacher_response", "")).strip()
+        corrected_text = str(result.get("corrected_text") or transcript).strip()
+        tips = result.get("tips", [])
+        if not teacher_response:
+            raise ValueError("Missing tutor response")
+        if not isinstance(tips, list):
+            tips = []
+        return {
+            "teacher_response": teacher_response,
+            "corrected_text": corrected_text,
+            "tips": [str(tip) for tip in tips[:1]],
+        }
+    except (json.JSONDecodeError, AttributeError, TypeError, ValueError):
+        return {"teacher_response": str(reply).strip(), "corrected_text": transcript, "tips": []}

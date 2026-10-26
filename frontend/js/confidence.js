@@ -231,13 +231,7 @@ class ConfidenceAnalyzer {
     }
 
     _getLevelEmoji() {
-        switch (this.level) {
-            case 'low': return '🔴';
-            case 'growing': return '🟡';
-            case 'steady': return '🟢';
-            case 'high': return '🔵';
-            default: return '🟢';
-        }
+        return '●';
     }
 
     // Get text description for tooltip

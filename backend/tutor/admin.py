@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserProfile, PracticeSession, Transcript, Feedback
+from .models import UserProfile, PracticeSession, Transcript, Feedback, WritingSubmission
 
 
 @admin.register(UserProfile)
@@ -24,3 +24,10 @@ class TranscriptAdmin(admin.ModelAdmin):
 @admin.register(Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
     list_display = ("id", "transcript")
+
+
+@admin.register(WritingSubmission)
+class WritingSubmissionAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "created_at", "xp_earned")
+    list_filter = ("created_at",)
+    search_fields = ("user__email", "text")

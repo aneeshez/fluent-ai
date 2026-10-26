@@ -5,11 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About - FluentAI</title>
+    <link rel="icon" href="images/logo-icon.jpg" type="image/jpeg">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/design-system.css">
@@ -30,7 +31,7 @@
             transform: translate(-50%, -50%);
             width: 600px;
             height: 600px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
             pointer-events: none;
         }
 
@@ -46,6 +47,14 @@
         .about-section h2 {
             font-size: var(--text-3xl);
             margin-bottom: var(--space-6);
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .about-section h2 .icon-box {
+            width: 40px;
+            height: 40px;
         }
 
         .about-section p {
@@ -67,8 +76,7 @@
         }
 
         .about-card-icon {
-            font-size: 3rem;
-            margin-bottom: var(--space-4);
+            margin: 0 auto var(--space-4);
         }
 
         .about-card h3 {
@@ -80,39 +88,6 @@
             font-size: var(--text-sm);
             color: var(--text-secondary);
             line-height: 1.7;
-        }
-
-        .team-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: var(--space-6);
-        }
-
-        .team-card {
-            padding: var(--space-6);
-            text-align: center;
-        }
-
-        .team-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: var(--gradient-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            margin: 0 auto var(--space-4);
-        }
-
-        .team-name {
-            font-weight: var(--font-semibold);
-            margin-bottom: var(--space-1);
-        }
-
-        .team-role {
-            font-size: var(--text-sm);
-            color: var(--text-muted);
         }
 
         .tech-stack {
@@ -129,14 +104,24 @@
             border: 1px solid var(--glass-border);
             border-radius: var(--radius-full);
             font-size: var(--text-sm);
+            color: var(--text-secondary);
+            transition: all var(--transition-base);
+        }
+
+        .tech-badge:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            color: var(--accent-primary-light);
+        }
+
+        .contact-actions {
+            display: flex;
+            gap: var(--space-4);
+            margin-top: var(--space-6);
+            flex-wrap: wrap;
         }
 
         @media (max-width: 768px) {
-
-            .about-grid,
-            .team-grid {
-                grid-template-columns: 1fr;
-            }
+            .about-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -147,8 +132,8 @@
         <nav class="nav" id="navbar">
             <div class="nav-container">
                 <a href="index.html" class="nav-logo">
-                    <div class="nav-logo-icon">🎓</div>
-                    <span class="nav-logo-text">FluentAI</span>
+                    <div class="nav-logo-icon"><img src="images/logo.jpg" alt="FluentAI"></div>
+                    <span class="nav-logo-text">Fluent<span>AI</span></span>
                 </a>
 
                 <div class="nav-links">
@@ -185,7 +170,12 @@
             <section class="section">
                 <div class="container about-content">
                     <div class="about-section animate-fade-in-up">
-                        <h2>🎯 Our Mission</h2>
+                        <h2>
+                            <span class="icon-box icon-box-teal icon-box-sm">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                            </span>
+                            Our Mission
+                        </h2>
                         <p>
                             FluentAI was born from a simple observation: traditional language learning methods often
                             focus on memorization rather than real communication skills. We believe that the best way to
@@ -200,28 +190,37 @@
 
                     <div class="about-grid stagger">
                         <div class="glass-card about-card animate-fade-in-up">
-                            <div class="about-card-icon">🤖</div>
+                            <div class="about-card-icon icon-box icon-box-teal icon-box-lg">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 8V4H8"/><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 18h.01"/><path d="M10 18h.01"/></svg>
+                            </div>
                             <h3>AI-Powered</h3>
-                            <p>Advanced AI understands context, grammar, and natural speech patterns to provide accurate
-                                feedback.</p>
+                            <p>Advanced AI understands context, grammar, and natural speech patterns to provide accurate feedback.</p>
                         </div>
 
                         <div class="glass-card about-card animate-fade-in-up">
-                            <div class="about-card-icon">⚡</div>
+                            <div class="about-card-icon icon-box icon-box-gold icon-box-lg">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                            </div>
                             <h3>Real-Time</h3>
-                            <p>Get instant corrections and suggestions as you speak or write, maximizing your learning
-                                efficiency.</p>
+                            <p>Get instant corrections and suggestions as you speak or write, maximizing your learning efficiency.</p>
                         </div>
 
                         <div class="glass-card about-card animate-fade-in-up">
-                            <div class="about-card-icon">🎓</div>
+                            <div class="about-card-icon icon-box icon-box-green icon-box-lg">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            </div>
                             <h3>Personalized</h3>
                             <p>Adaptive learning that focuses on your weaknesses and builds on your strengths.</p>
                         </div>
                     </div>
 
                     <div class="about-section animate-fade-in-up">
-                        <h2>💡 How It Works</h2>
+                        <h2>
+                            <span class="icon-box icon-box-gold icon-box-sm">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                            </span>
+                            How It Works
+                        </h2>
                         <p>
                             FluentAI uses a combination of speech recognition, natural language processing, and large
                             language models to analyze your English in real-time. Our system evaluates grammar,
@@ -235,36 +234,44 @@
                     </div>
 
                     <div class="about-section animate-fade-in-up">
-                        <h2>🛠️ Technology</h2>
+                        <h2>
+                            <span class="icon-box icon-box-blue icon-box-sm">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                            </span>
+                            Technology
+                        </h2>
                         <p>
-                            Built with cutting-edge technologies to ensure the best user experience and learning
-                            outcomes.
+                            Built with cutting-edge technologies to ensure the best user experience and learning outcomes.
                         </p>
                         <div class="tech-stack">
-                            <span class="tech-badge">OpenAI Whisper</span>
-                            <span class="tech-badge">Ollama LLM</span>
+                            <span class="tech-badge">Groq API</span>
                             <span class="tech-badge">Web Speech API</span>
-                            <span class="tech-badge">Flask</span>
-                            <span class="tech-badge">Socket.IO</span>
+                            <span class="tech-badge">SpeechSynthesis API</span>
+                            <span class="tech-badge">Django</span>
+                            <span class="tech-badge">SQLite</span>
                             <span class="tech-badge">Python</span>
                             <span class="tech-badge">JavaScript</span>
                         </div>
                     </div>
 
                     <div class="about-section animate-fade-in-up">
-                        <h2>📧 Contact Us</h2>
+                        <h2>
+                            <span class="icon-box icon-box-teal icon-box-sm">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            </span>
+                            Contact Us
+                        </h2>
                         <p>
                             Have questions, feedback, or suggestions? We'd love to hear from you!
                         </p>
-                        <div style="display: flex; gap: var(--space-4); margin-top: var(--space-6); flex-wrap: wrap;">
+                        <div class="contact-actions">
                             <a href="mailto:hello@fluentai.com" class="btn btn-primary">
-                                📧 Email Us
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                Email Us
                             </a>
                             <a href="#" class="btn btn-secondary">
-                                💬 Live Chat
-                            </a>
-                            <a href="#" class="btn btn-secondary">
-                                📱 Twitter
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                Live Chat
                             </a>
                         </div>
                     </div>
@@ -274,16 +281,16 @@
             <!-- CTA -->
             <section class="cta-section" style="background: var(--bg-secondary);">
                 <div class="container">
-                    <div class="glass-card"
-                        style="padding: var(--space-12); text-align: center; max-width: 600px; margin: 0 auto;">
+                    <div class="glass-card" style="padding: var(--space-12); text-align: center; max-width: 600px; margin: 0 auto;">
                         <h2 style="font-size: var(--text-3xl); margin-bottom: var(--space-4);">
                             Ready to Start Learning?
                         </h2>
                         <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">
-                            Join thousands of learners improving their English with FluentAI.
+                            Create an account to save your sessions, writing feedback, and progress.
                         </p>
                         <a href="signup.html" class="btn btn-primary btn-lg">
-                            Get Started Free →
+                            Get Started Free
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                         </a>
                     </div>
                 </div>
@@ -296,12 +303,11 @@
                 <div class="footer-grid">
                     <div class="footer-brand">
                         <div class="footer-logo">
-                            <div class="nav-logo-icon">🎓</div>
+                            <div class="nav-logo-icon"><img src="images/logo.jpg" alt="FluentAI"></div>
                             <span>FluentAI</span>
                         </div>
                         <p class="footer-description">
-                            AI-powered English learning platform. Improve your speaking and writing with real-time
-                            feedback.
+                            AI-powered English learning platform. Improve your speaking and writing with real-time feedback.
                         </p>
                     </div>
 
@@ -333,23 +339,19 @@
                 </div>
 
                 <div class="footer-bottom">
-                    <p class="footer-copyright">© 2024 FluentAI. All rights reserved.</p>
+                    <p class="footer-copyright">&copy; 2026 FluentAI. All rights reserved.</p>
                 </div>
             </div>
         </footer>
     </div>
 
     <script>
-        // Navigation scroll effect
         const navbar = document.getElementById('navbar');
         window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
         });
     </script>
+    <script src="js/navigation.js"></script>
 </body>
 
 </html>
