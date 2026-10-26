@@ -197,7 +197,7 @@ class AnimatedAvatar {
         // --- BACKGROUND GLOW (state-reactive) ---
         const glowAlpha = 0.08 + this.speakAnim * 0.12 + this.listenAnim * 0.05 + this.happyAnim * 0.08;
         const bgGlow = ctx.createRadialGradient(cx, cy, 20, cx, cy, this.w * 0.5);
-        bgGlow.addColorStop(0, `rgba(194, 169, 107, ${glowAlpha * 0.8})`);
+        bgGlow.addColorStop(0, `rgba(166, 187, 156, ${glowAlpha * 0.8})`);
         bgGlow.addColorStop(0.5, `rgba(86, 130, 100, ${glowAlpha * 0.5})`);
         bgGlow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = bgGlow;
@@ -207,7 +207,7 @@ class AnimatedAvatar {
         const ringR = Math.min(cx, cy) * 0.48;
         const ringGlow = ctx.createRadialGradient(cx, cy, ringR - 5, cx, cy, ringR + 30);
         const rgAlpha = 0.1 + this.ringPulse * 0.3;
-        ringGlow.addColorStop(0, `rgba(194, 169, 107, ${rgAlpha * 0.8})`);
+        ringGlow.addColorStop(0, `rgba(166, 187, 156, ${rgAlpha * 0.8})`);
         ringGlow.addColorStop(0.6, `rgba(115, 144, 113, ${rgAlpha * 0.35})`);
         ringGlow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = ringGlow;
@@ -224,9 +224,9 @@ class AnimatedAvatar {
             const nextAngle = ((i + 1) / segments) * Math.PI * 2 + this.ringRotation;
             const t = i / segments;
 
-            const r = Math.floor(156 + Math.sin(t * Math.PI * 2) * 24);
-            const g = Math.floor(137 + Math.sin(t * Math.PI * 2 + 2) * 19);
-            const b = Math.floor(91 + Math.sin(t * Math.PI * 2 + 1) * 17);
+            const r = Math.floor(150 + Math.sin(t * Math.PI * 2) * 14);
+            const g = Math.floor(174 + Math.sin(t * Math.PI * 2 + 2) * 12);
+            const b = Math.floor(148 + Math.sin(t * Math.PI * 2 + 1) * 14);
             const alpha = 0.5 + this.ringPulse * 0.5;
 
             ctx.beginPath();
@@ -239,7 +239,7 @@ class AnimatedAvatar {
         // Subtle outer ring
         ctx.beginPath();
         ctx.arc(0, 0, ringR + 7, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(194, 169, 107, ${0.12 + this.ringPulse * 0.12})`;
+        ctx.strokeStyle = `rgba(166, 187, 156, ${0.12 + this.ringPulse * 0.12})`;
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -274,8 +274,8 @@ class AnimatedAvatar {
         ctx.beginPath();
         ctx.ellipse(0, 30 * scale, 65 * scale, 45 * scale, 0, Math.PI, 0, true);
         const bodyGrad = ctx.createLinearGradient(0, -10 * scale, 0, 60 * scale);
-        bodyGrad.addColorStop(0, '#c4ad72');
-        bodyGrad.addColorStop(1, '#8c7546');
+        bodyGrad.addColorStop(0, '#b4c5a7');
+        bodyGrad.addColorStop(1, '#84977a');
         ctx.fillStyle = bodyGrad;
         ctx.fill();
 
@@ -489,7 +489,7 @@ class AnimatedAvatar {
             const speakGlow = ctx.createRadialGradient(0, 0, ringR * 0.5, 0, 0, ringR);
             speakGlow.addColorStop(0, 'rgba(0,0,0,0)');
             speakGlow.addColorStop(0.85, 'rgba(0,0,0,0)');
-            speakGlow.addColorStop(1, `rgba(194, 169, 107, ${this.speakAnim * 0.18})`);
+            speakGlow.addColorStop(1, `rgba(166, 187, 156, ${this.speakAnim * 0.18})`);
             ctx.fillStyle = speakGlow;
             ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
         }
@@ -575,7 +575,7 @@ class AnimatedAvatar {
             const x = startX + i * (barW + gap);
 
             const barGrad = ctx.createLinearGradient(x, y - h, x, y);
-            barGrad.addColorStop(0, `rgba(194, 169, 107, ${0.9 * intensity})`);
+            barGrad.addColorStop(0, `rgba(166, 187, 156, ${0.9 * intensity})`);
             barGrad.addColorStop(1, `rgba(157, 178, 154, ${0.65 * intensity})`);
             ctx.fillStyle = barGrad;
 

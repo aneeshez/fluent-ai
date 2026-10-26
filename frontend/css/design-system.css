@@ -27,8 +27,8 @@
   /* Semantic Accents */
   --accent-success: #10B981;
   --accent-success-light: #34D399;
-  --accent-warning: #F59E0B;
-  --accent-warning-light: #FBBF24;
+  --accent-warning: #C8886B;
+  --accent-warning-light: #DDA18A;
   --accent-danger: #EF4444;
   --accent-danger-light: #F87171;
   --accent-info: #3B82F6;
@@ -496,8 +496,8 @@ h6 { font-size: var(--text-lg); }
 }
 
 .badge-warning {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.25);
+  background: rgba(200, 136, 107, 0.12);
+  border-color: rgba(200, 136, 107, 0.25);
   color: var(--accent-warning-light);
 }
 
@@ -602,9 +602,9 @@ h6 { font-size: var(--text-lg); }
 }
 
 .icon-box-gold {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.25);
-  color: #FBBF24;
+  background: rgba(200, 136, 107, 0.12);
+  border-color: rgba(200, 136, 107, 0.25);
+  color: #DDA18A;
 }
 
 .icon-box-blue {

@@ -153,8 +153,8 @@ function updateChallengeTimer() {
     if (progressEl) {
         const pct = Math.min(100, (elapsed / activeChallenge.timeLimit) * 100);
         progressEl.style.width = `${pct}%`;
-        if (pct > 80) progressEl.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
-        else if (pct > 60) progressEl.style.background = 'linear-gradient(90deg, #8b5cf6, #f59e0b)';
+        if (pct > 80) progressEl.style.background = 'linear-gradient(90deg, #c8886b, #ef4444)';
+        else if (pct > 60) progressEl.style.background = 'linear-gradient(90deg, #a6bb9c, #c8886b)';
     }
 
     if (remaining <= 0 && isRecording) {
@@ -539,7 +539,7 @@ function setStatus(text) {
         else if (text.includes('Muted') || text.includes('ended'))
             dot.style.background = '#9ca3af';
         else if (text.includes('thinking'))
-            dot.style.background = '#fbbf24';
+            dot.style.background = '#c8886b';
         else
             dot.style.background = '#22c55e';
     }

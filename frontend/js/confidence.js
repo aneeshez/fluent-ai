@@ -223,10 +223,10 @@ class ConfidenceAnalyzer {
     _getLevelColor() {
         switch (this.level) {
             case 'low': return '#f87171';      // red
-            case 'growing': return '#fbbf24';   // amber
-            case 'steady': return '#34d399';    // green
+            case 'growing': return '#c8886b';   // clay
+            case 'steady': return '#a6bb9c';    // sage
             case 'high': return '#60a5fa';      // blue
-            default: return '#34d399';
+            default: return '#a6bb9c';
         }
     }
 
