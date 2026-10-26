@@ -185,6 +185,12 @@ input[type="checkbox"] { accent-color:var(--accent-primary); }
 }
 .video-card { min-height:420px; }
 .ai-avatar,.simli-video,.avatar-fallback { background:radial-gradient(circle at 50% 25%,#f7e6d6 0,#e5eee5 70%,#d9e4db 100%)!important; }
+.ai-avatar::before { background:radial-gradient(circle at 50% 30%,rgba(216,121,89,.08),transparent 62%)!important; }
+.confidence-panel { color:var(--text-primary)!important; background:linear-gradient(135deg,#fff,#f4f6f0)!important; border:1px solid var(--glass-border)!important; box-shadow:var(--shadow-sm); }
+.cp-title,.cp-signals,.ct-signal-name,.ct-signal-value { color:var(--text-secondary)!important; }
+.ct-signal-bar { background:#e4eae2!important; }
+.ct-signal-fill { background:var(--gradient-primary)!important; }
+.ai-avatar-name { color:var(--text-primary); }
 .avatar-character,.avatar-body { filter:drop-shadow(0 10px 14px rgba(39,72,54,.1)); }
 .video-label,.transcript-header,.status-bar,.confidence-label,.confidence-tooltip,
 .transcript-content,.message,.feedback-item,.feedback-text,.ai-avatar-name { color:var(--text-primary); }

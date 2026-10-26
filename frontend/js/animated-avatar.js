@@ -179,9 +179,9 @@ class AnimatedAvatar {
 
         // --- BACKGROUND ---
         const bgGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, this.w * 0.75);
-        bgGrad.addColorStop(0, '#1a1035');
-        bgGrad.addColorStop(0.6, '#12102e');
-        bgGrad.addColorStop(1, '#080614');
+        bgGrad.addColorStop(0, '#f6f1e6');
+        bgGrad.addColorStop(0.6, '#e9efe7');
+        bgGrad.addColorStop(1, '#dce8dd');
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, this.w, this.h);
 
@@ -190,15 +190,15 @@ class AnimatedAvatar {
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
             const pAlpha = p.alpha * (1 + this.speakAnim * 0.5);
-            ctx.fillStyle = `rgba(139, 92, 246, ${pAlpha})`;
+            ctx.fillStyle = `rgba(35, 116, 90, ${pAlpha})`;
             ctx.fill();
         }
 
         // --- BACKGROUND GLOW (state-reactive) ---
         const glowAlpha = 0.08 + this.speakAnim * 0.12 + this.listenAnim * 0.05 + this.happyAnim * 0.08;
         const bgGlow = ctx.createRadialGradient(cx, cy, 20, cx, cy, this.w * 0.5);
-        bgGlow.addColorStop(0, `rgba(99, 102, 241, ${glowAlpha})`);
-        bgGlow.addColorStop(0.5, `rgba(139, 92, 246, ${glowAlpha * 0.4})`);
+        bgGlow.addColorStop(0, `rgba(86, 151, 111, ${glowAlpha})`);
+        bgGlow.addColorStop(0.5, `rgba(216, 121, 89, ${glowAlpha * 0.4})`);
         bgGlow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = bgGlow;
         ctx.fillRect(0, 0, this.w, this.h);
@@ -207,8 +207,8 @@ class AnimatedAvatar {
         const ringR = Math.min(cx, cy) * 0.48;
         const ringGlow = ctx.createRadialGradient(cx, cy, ringR - 5, cx, cy, ringR + 30);
         const rgAlpha = 0.1 + this.ringPulse * 0.3;
-        ringGlow.addColorStop(0, `rgba(99, 102, 241, ${rgAlpha})`);
-        ringGlow.addColorStop(0.6, `rgba(139, 92, 246, ${rgAlpha * 0.3})`);
+        ringGlow.addColorStop(0, `rgba(35, 116, 90, ${rgAlpha})`);
+        ringGlow.addColorStop(0.6, `rgba(78, 135, 148, ${rgAlpha * 0.3})`);
         ringGlow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = ringGlow;
         ctx.fillRect(0, 0, this.w, this.h);
@@ -224,9 +224,9 @@ class AnimatedAvatar {
             const nextAngle = ((i + 1) / segments) * Math.PI * 2 + this.ringRotation;
             const t = i / segments;
 
-            const r = Math.floor(99 + Math.sin(t * Math.PI * 2) * 40);
-            const g = Math.floor(102 + Math.sin(t * Math.PI * 2 + 2) * 30);
-            const b = Math.floor(241 - Math.sin(t * Math.PI * 2 + 1) * 40);
+            const r = Math.floor(45 + Math.sin(t * Math.PI * 2) * 24);
+            const g = Math.floor(126 + Math.sin(t * Math.PI * 2 + 2) * 22);
+            const b = Math.floor(91 + Math.sin(t * Math.PI * 2 + 1) * 18);
             const alpha = 0.5 + this.ringPulse * 0.5;
 
             ctx.beginPath();
@@ -239,7 +239,7 @@ class AnimatedAvatar {
         // Subtle outer ring
         ctx.beginPath();
         ctx.arc(0, 0, ringR + 7, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(139, 92, 246, ${0.06 + this.ringPulse * 0.08})`;
+        ctx.strokeStyle = `rgba(35, 116, 90, ${0.12 + this.ringPulse * 0.12})`;
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -250,9 +250,9 @@ class AnimatedAvatar {
 
         // Background inside circle
         const innerBg = ctx.createRadialGradient(0, -10, 10, 0, 0, ringR);
-        innerBg.addColorStop(0, '#2d2153');
-        innerBg.addColorStop(0.5, '#1a1035');
-        innerBg.addColorStop(1, '#0f0a1e');
+        innerBg.addColorStop(0, '#fbf4e9');
+        innerBg.addColorStop(0.5, '#eaf1e8');
+        innerBg.addColorStop(1, '#dce8dd');
         ctx.fillStyle = innerBg;
         ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
 
@@ -274,8 +274,8 @@ class AnimatedAvatar {
         ctx.beginPath();
         ctx.ellipse(0, 30 * scale, 65 * scale, 45 * scale, 0, Math.PI, 0, true);
         const bodyGrad = ctx.createLinearGradient(0, -10 * scale, 0, 60 * scale);
-        bodyGrad.addColorStop(0, '#6366f1');
-        bodyGrad.addColorStop(1, '#4338ca');
+        bodyGrad.addColorStop(0, '#4f9475');
+        bodyGrad.addColorStop(1, '#236b51');
         ctx.fillStyle = bodyGrad;
         ctx.fill();
 
@@ -385,9 +385,9 @@ class AnimatedAvatar {
         ctx.beginPath();
         ctx.ellipse(this.eyePupilX * scale * 0.4, this.eyePupilY * scale * 0.4, 5 * scale, 5 * scale, 0, 0, Math.PI * 2);
         const irisGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, 5 * scale);
-        irisGrad.addColorStop(0, '#6366f1');
-        irisGrad.addColorStop(0.7, '#4338ca');
-        irisGrad.addColorStop(1, '#312e81');
+        irisGrad.addColorStop(0, '#72a88a');
+        irisGrad.addColorStop(0.7, '#3f8062');
+        irisGrad.addColorStop(1, '#285b45');
         ctx.fillStyle = irisGrad;
         ctx.fill();
 
@@ -489,7 +489,7 @@ class AnimatedAvatar {
             const speakGlow = ctx.createRadialGradient(0, 0, ringR * 0.5, 0, 0, ringR);
             speakGlow.addColorStop(0, 'rgba(0,0,0,0)');
             speakGlow.addColorStop(0.85, 'rgba(0,0,0,0)');
-            speakGlow.addColorStop(1, `rgba(99, 102, 241, ${this.speakAnim * 0.2})`);
+            speakGlow.addColorStop(1, `rgba(35, 116, 90, ${this.speakAnim * 0.2})`);
             ctx.fillStyle = speakGlow;
             ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
         }
@@ -509,7 +509,7 @@ class AnimatedAvatar {
             const happyGlow = ctx.createRadialGradient(0, 0, ringR * 0.5, 0, 0, ringR);
             happyGlow.addColorStop(0, 'rgba(0,0,0,0)');
             happyGlow.addColorStop(0.85, 'rgba(0,0,0,0)');
-            happyGlow.addColorStop(1, `rgba(245, 158, 11, ${this.happyAnim * 0.12})`);
+            happyGlow.addColorStop(1, `rgba(216, 121, 89, ${this.happyAnim * 0.12})`);
             ctx.fillStyle = happyGlow;
             ctx.fillRect(-ringR, -ringR, ringR * 2, ringR * 2);
         }
@@ -520,27 +520,27 @@ class AnimatedAvatar {
         const textY = cy + ringR + 18;
 
         ctx.font = '600 18px Inter, sans-serif';
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#203a2d';
         ctx.textAlign = 'center';
         ctx.fillText('Luna', cx, textY);
 
         // Status text changes based on state
         ctx.font = '500 11px Inter, sans-serif';
         let statusText = 'AI COMMUNICATION TUTOR';
-        let statusColor = 'rgba(255,255,255,0.4)';
+        let statusColor = 'rgba(49,92,67,0.68)';
 
         if (this.state === AvatarState.SPEAKING) {
             statusText = '● SPEAKING...';
-            statusColor = 'rgba(139, 92, 246, 0.9)';
+            statusColor = 'rgba(35, 116, 90, 0.95)';
         } else if (this.state === AvatarState.LISTENING) {
             statusText = '● LISTENING';
-            statusColor = 'rgba(16, 185, 129, 0.8)';
+            statusColor = 'rgba(35, 116, 90, 0.85)';
         } else if (this.state === AvatarState.THINKING) {
             statusText = '● THINKING...';
-            statusColor = 'rgba(99, 102, 241, 0.8)';
+            statusColor = 'rgba(78, 135, 148, 0.9)';
         } else if (this.state === AvatarState.HAPPY || this.state === AvatarState.GREETING) {
             statusText = '● HELLO!';
-            statusColor = 'rgba(245, 158, 11, 0.8)';
+            statusColor = 'rgba(182, 109, 32, 0.9)';
         }
 
         ctx.fillStyle = statusColor;
@@ -575,8 +575,8 @@ class AnimatedAvatar {
             const x = startX + i * (barW + gap);
 
             const barGrad = ctx.createLinearGradient(x, y - h, x, y);
-            barGrad.addColorStop(0, `rgba(139, 92, 246, ${0.9 * intensity})`);
-            barGrad.addColorStop(1, `rgba(99, 102, 241, ${0.4 * intensity})`);
+            barGrad.addColorStop(0, `rgba(35, 116, 90, ${0.9 * intensity})`);
+            barGrad.addColorStop(1, `rgba(78, 135, 148, ${0.55 * intensity})`);
             ctx.fillStyle = barGrad;
 
             ctx.beginPath();
@@ -618,7 +618,7 @@ class AnimatedAvatar {
             const dotAlpha = 0.4 + Math.sin(t + i * 1.3) * 0.3;
             ctx.beginPath();
             ctx.arc(cx - 12 + i * 12, dotY, 3.5, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(139, 92, 246, ${dotAlpha * intensity})`;
+            ctx.fillStyle = `rgba(78, 135, 148, ${dotAlpha * intensity})`;
             ctx.fill();
         }
     }
