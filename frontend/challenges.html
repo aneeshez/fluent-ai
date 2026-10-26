@@ -447,7 +447,14 @@
         if (user) {
             const avatar = document.getElementById('userAvatar');
             if (user.picture) {
-                avatar.innerHTML = `<img src="${user.picture}" alt="">`;
+                if (typeof user.picture === 'string' && /^https:\/\//i.test(user.picture)) {
+                    const picture = document.createElement('img');
+                    picture.src = user.picture;
+                    picture.alt = '';
+                    avatar.replaceChildren(picture);
+                } else {
+                    avatar.textContent = (user.name || 'U')[0].toUpperCase();
+                }
             } else {
                 avatar.textContent = (user.name || 'U').charAt(0).toUpperCase();
             }

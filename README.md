@@ -1,100 +1,121 @@
-# FluentAI — AI English Communication Tutor
+# FluentAI
 
-An AI-powered English tutor that helps you practice speaking and writing. Talk with Luna (the AI tutor) in real-time, get instant feedback on your writing, and track your progress over time.
+## Introduction
 
-## Features
+FluentAI is an English communication practice app for people who want to speak and write with more confidence. Learners can talk with Luna, an AI tutor, practice real-life situations, get feedback on their writing, and follow their progress over time.
 
-- **Speaking Practice** — Converse with Luna, an AI English tutor, using your microphone
-- **Animated AI Avatar** — Canvas-based avatar reacts when Luna is speaking, listening, or thinking
-- **Confidence Meter** — Tracks 5 speech signals (fillers, pace, vocabulary, hesitation, response length)
-- **8 Practice Challenges** — Self-introduction, describe your home, favorite food, storytelling, mock interview, debate, and more
-- **Writing Analysis** — Submit short essays and get grammar, vocabulary, and coherence scores with corrections
-- **Secure Accounts** — Django-managed email/password accounts and session-based login
-- **Saved Progress** — Speaking transcripts, challenge XP, writing feedback, and dashboard totals stored in SQLite
-- **Progress Dashboard** — Track XP, streaks, session history, and achievements
+The project brings together a browser-based interface, a Django backend, and Groq-powered AI feedback. Speech recognition and spoken replies use browser features, so learners can practice without installing a separate speech app.
 
-## Tech Stack
+## What you can do
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | HTML, CSS, Vanilla JavaScript |
-| Backend | Python + Django |
-| AI / LLM | Groq API (requires a Groq API key) |
-| Speech-to-Text | Web Speech API (built into supported browsers; no separate key) |
-| Text-to-Speech | Browser SpeechSynthesis API (built-in, free) |
-| Database | SQLite |
+- Practice spoken English with Luna and review conversation transcripts
+- Choose from eight guided speaking challenges, including introductions, storytelling, and interviews
+- Submit writing for grammar, vocabulary, coherence, and task feedback
+- Create an account to save writing and speaking progress
+- Track practice sessions, words spoken, streaks, and XP on the dashboard
+- Use the animated tutor avatar and confidence meter during speaking practice
 
-## Quick Start
+Google sign-in is not configured. A Groq API key is needed for AI writing feedback and live AI conversation. Without the key, speaking practice uses a basic fallback response and writing analysis is unavailable.
 
-### Prerequisites
+## Technology
+
+- **Frontend:** HTML, CSS, and vanilla JavaScript
+- **Backend:** Python 3.10+ and Django
+- **AI:** Groq API
+- **Speech:** Browser Web Speech API and SpeechSynthesis API
+- **Local database:** SQLite
+
+Speech recognition and microphone access depend on the browser. Use a supported browser and allow microphone access; localhost is allowed for development, while hosted sites need HTTPS.
+
+## Get started
+
+### Requirements
+
 - Python 3.10 or newer
+- A Groq API key for AI features ([create one in the Groq console](https://console.groq.com))
 
-### Setup
+### Install
 
-```bash
+From the project folder, create a virtual environment and install the backend packages:
+
+```powershell
 cd backend
-python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # Mac/Linux
-pip install -r requirements.txt
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
 ```
 
-### Configure API Key
+On macOS or Linux, activate the environment with `source .venv/bin/activate` and copy `.env.example` to `.env`.
 
-Copy `backend/.env.example` to `backend/.env` and add your Groq key. Set a unique `DJANGO_SECRET_KEY` before deploying:
+Open `backend/.env` and set `DJANGO_SECRET_KEY` to a unique random value. For local work, set `DEBUG=True` and add your `GROQ_API_KEY`. Keep this file private; it is ignored by Git.
 
-```
-DJANGO_SECRET_KEY=replace-with-a-long-random-value
-DEBUG=True
-GROQ_API_KEY=your_key_here
-```
+### Start the app
 
-Get a free key at [console.groq.com](https://console.groq.com)
+Run these commands from the `backend/` folder:
 
-### Run
-
-```bash
+```powershell
 python manage.py migrate
 python manage.py runserver
 ```
 
-Open `http://127.0.0.1:8000`. Speaking recognition works in supported browsers such as current Chrome and Edge; microphone access requires localhost or HTTPS. Create an account to save writing and progress.
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser. Create an account to save writing submissions and view your progress. To run the automated backend checks, use `python manage.py test` from `backend/`.
 
-## Project Structure
+The local SQLite database is created at `backend/db.sqlite3`. It is ignored by Git and contains local account and practice data, so keep a backup if you need to preserve it.
 
-```
-fluent-ai/
-├── backend/              # Django project
-│   ├── fluent_ai/        # Django project settings and URL config
-│   ├── tutor/            # Main Django app (views, models, NLP)
-│   ├── requirements.txt
-│   └── manage.py
-└── frontend/             # Static HTML/CSS/JS files
-    ├── index.html        # Landing page
-    ├── practice.html     # Speaking practice
-    ├── writing.html      # Writing test
-    ├── dashboard.html    # Progress dashboard
-    ├── challenges.html   # Challenge picker
-    ├── about.html        # About page
-    ├── login.html        # Login page
-    ├── signup.html       # Signup page
-    ├── profile.html      # User profile
-    ├── css/              # Stylesheets
-    └── js/               # JavaScript modules
+## Configuration
+
+The available environment variables are listed in `backend/.env.example`.
+
+| Variable | Use |
+|---|---|
+| `DJANGO_SECRET_KEY` | Django session and signing key; use a unique random value |
+| `DEBUG` | Local debugging; should be `False` on a public deployment |
+| `ALLOWED_HOSTS` | Comma-separated hostnames accepted by Django |
+| `GROQ_API_KEY` | Enables Groq-powered conversation and writing analysis |
+| `CORS_ALLOW_ALL_ORIGINS` | Keep disabled unless a separate frontend origin is required |
+| `SECURE_SSL_REDIRECT` | Redirect HTTP requests after HTTPS is set up |
+| `SECURE_HSTS_SECONDS` | HSTS duration; configure only after confirming HTTPS is enforced |
+| `SESSION_COOKIE_SECURE` | Restrict session cookies to HTTPS |
+| `CSRF_COOKIE_SECURE` | Restrict CSRF cookies to HTTPS |
+
+## Project files
+
+```text
+backend/
+  fluent_ai/       Django settings and URL configuration
+  tutor/           API, database models, AI integration, and tests
+  .env.example     Environment variable template
+  manage.py        Django management commands
+frontend/
+  *.html           Website pages
+  css/             Page styles and shared design system
+  js/              Frontend behavior and API calls
+  images/          Brand assets
 ```
 
-## How It Works
+## Checks
 
+Run from `backend/` before making a change or preparing a deployment:
+
+```powershell
+python manage.py check
+python manage.py test
+python manage.py makemigrations --check --dry-run
+python manage.py check --deploy
 ```
-User speaks → Browser microphone
-                    ↓
-          Web Speech API (free, built-in)
-                    ↓
-           Transcript text sent to Django
-                    ↓
-          Groq API → Luna's AI response
-                    ↓
-     Browser SpeechSynthesis speaks the reply
-                    ↓
-       Animated avatar reacts + transcript shown
-```
+
+The tests cover core API behavior. They do not test a live Groq account, browser speech, responsive layouts, load, or the hosting environment.
+
+## Production readiness
+
+FluentAI is currently a development project, **not ready for a public production launch**. Before opening it to real users:
+
+- Bind guest practice sessions to the browser or account that created them; currently, another guest who learns a session ID may access or finish that session.
+- Serve frontend assets through a production web server or static-file service instead of Django's development static-file view.
+- Add rate limits for login, signup, and AI endpoints.
+- Replace SQLite with a production database and configure backups and recovery.
+- Configure HTTPS, a unique secret, secure cookies, allowed hosts, logging, monitoring, and deployment checks for the selected host.
+- Finish email verification and password recovery, and replace the placeholder privacy and terms links before collecting real user data.
+
+`python manage.py check --deploy` should be reviewed with the production environment configured. A passing local test suite alone does not confirm that the hosted app, Groq integration, microphone access, or production operations are ready.

@@ -8,8 +8,12 @@ if (!user) {
 }
 const avatarEl = document.getElementById('userAvatar');
 if (avatarEl && user) {
-    if (user.picture) avatarEl.innerHTML = `<img src="${user.picture}" alt="">`;
-    else avatarEl.textContent = (user.name || 'U')[0].toUpperCase();
+    if (typeof user.picture === 'string' && /^https:\/\//i.test(user.picture)) {
+        const picture = document.createElement('img');
+        picture.src = user.picture;
+        picture.alt = '';
+        avatarEl.replaceChildren(picture);
+    } else avatarEl.textContent = (user.name || 'U')[0].toUpperCase();
 }
 
 // Session state
