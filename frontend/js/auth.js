@@ -29,8 +29,19 @@ document.getElementById('passToggle')?.addEventListener('click', event => {
         : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 });
 
-document.getElementById(authIsSignup ? 'googleSignUp' : 'googleSignIn')?.addEventListener('click', () => {
-    showAuthError('Google sign-in is not configured yet. Please use your email and password.');
+document.getElementById('resendVerification')?.addEventListener('click', async () => {
+    const button = document.getElementById('resendVerification');
+    button.disabled = true;
+    try {
+        const result = await FluentAPI.request('/api/auth/email-verification/resend/', {
+            method: 'POST',
+            body: JSON.stringify({ email: document.getElementById('email').value.trim() })
+        });
+        showAuthSuccess(result.message);
+    } catch (error) {
+        showAuthError(error.message);
+        button.disabled = false;
+    }
 });
 
 document.getElementById('guestBtn')?.addEventListener('click', () => {
@@ -66,11 +77,21 @@ authForm.addEventListener('submit', async event => {
         const response = await FluentAPI.request(authIsSignup ? '/api/auth/register/' : '/api/auth/login/', {
             method: 'POST', body: JSON.stringify(payload)
         });
+        if (authIsSignup) {
+            showAuthSuccess(response.message);
+            document.getElementById('resendVerificationWrap')?.removeAttribute('hidden');
+            authButton.disabled = true;
+            authButton.classList.remove('btn-loading');
+            return;
+        }
         localStorage.setItem('fluentai_user', JSON.stringify(response.user));
-        showAuthSuccess(authIsSignup ? `Welcome to FluentAI, ${response.user.name}!` : `Welcome back, ${response.user.name}!`);
+        showAuthSuccess(`Welcome back, ${response.user.name}!`);
         window.location.href = 'dashboard.html';
     } catch (error) {
         showAuthError(error.message);
+        if (!authIsSignup && error.status === 403) {
+            document.getElementById('resendVerificationWrap')?.removeAttribute('hidden');
+        }
         authButton.disabled = false;
         authButton.classList.remove('btn-loading');
     }

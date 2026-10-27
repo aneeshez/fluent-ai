@@ -1,26 +1,121 @@
 import json
+import hashlib
+import ipaddress
 import logging
 import os
 import time
+from functools import wraps
 from datetime import datetime, timedelta
+from urllib.parse import urlencode
 
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.db import transaction
+from django.db import IntegrityError, connection, transaction
 from django.db.models import Sum
+from django.conf import settings
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import Feedback, PracticeSession, Transcript, UserProfile, WritingSubmission
+from .models import Feedback, PracticeSession, RequestRateLimit, Transcript, UserProfile, WritingSubmission
 from .nlp import analyze_text
 
 logger = logging.getLogger(__name__)
+
+PAGE_NAMES = {
+    "about", "challenges", "dashboard", "email-verify", "index", "login", "password-reset", "practice", "profile", "signup", "writing",
+}
+
+
+def rate_limit(bucket, limit, window, by_user=False):
+    """Count repeated requests in the shared application database."""
+    def decorator(view):
+        @wraps(view)
+        def wrapped(request, *args, **kwargs):
+            if request.method != "POST":
+                return view(request, *args, **kwargs)
+            client_ip = request.META.get("REMOTE_ADDR", "unknown")
+            if settings.TRUST_PROXY_IP_HEADER:
+                forwarded_ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",", 1)[0].strip()
+                try:
+                    ipaddress.ip_address(forwarded_ip)
+                    client_ip = forwarded_ip
+                except ValueError:
+                    pass
+            identities = [f"ip:{client_ip}"]
+            if by_user and getattr(request.user, "is_authenticated", False):
+                identities.append(f"user:{request.user.pk}")
+            blocked = False
+            for identity in identities:
+                key = hashlib.sha256(f"{bucket}:{identity}".encode("utf-8")).hexdigest()
+                count = _increment_rate_limit(key, limit, window)
+                blocked = blocked or count > limit
+                if blocked:
+                    break
+            if blocked:
+                response = JsonResponse(
+                    {"error": "Too many requests. Please wait a little and try again."},
+                    status=429,
+                )
+                response["Retry-After"] = str(window)
+                return response
+            return view(request, *args, **kwargs)
+        return wrapped
+    return decorator
+
+
+def _increment_rate_limit(key, limit, window):
+    now = timezone.now()
+    expires_at = now + timedelta(seconds=window)
+    with transaction.atomic():
+        try:
+            entry = RequestRateLimit.objects.select_for_update().get(pk=key)
+        except RequestRateLimit.DoesNotExist:
+            try:
+                with transaction.atomic():
+                    RequestRateLimit.objects.create(key=key, count=1, expires_at=expires_at)
+                return 1
+            except IntegrityError:
+                entry = RequestRateLimit.objects.select_for_update().get(pk=key)
+        if entry.expires_at <= now:
+            entry.count = 1
+            entry.expires_at = expires_at
+        elif entry.count > limit:
+            return limit + 1
+        else:
+            entry.count += 1
+        entry.save(update_fields=["count", "expires_at"])
+        return entry.count
+
+
+def _guest_session_key(request):
+    if not request.session.session_key:
+        request.session.create()
+    return request.session.session_key
+
+
+def _send_verification_email(request, user):
+    profile = UserProfile.objects.filter(user=user).first()
+    if not profile or profile.email_verified:
+        return
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    query = urlencode({"uid": uid, "token": token})
+    verify_url = request.build_absolute_uri(f"/email-verify.html?{query}")
+    message = (
+        f"Hi {profile.name},\n\nPlease verify your FluentAI email address by opening this link:\n"
+        f"{verify_url}\n\nIf you did not create this account, you can ignore this email."
+    )
+    send_mail("Verify your FluentAI email", message, None, [user.email], fail_silently=False)
 
 
 def _email_is_valid(email):
@@ -44,6 +139,13 @@ CHALLENGE_XP = {
 
 def index(request):
     return render(request, "index.html")
+
+
+def page(request, page_name):
+    if page_name not in PAGE_NAMES:
+        from django.http import Http404
+        raise Http404
+    return render(request, f"{page_name}.html")
 
 
 def _json_body(request):
@@ -70,10 +172,17 @@ def csrf_token_view(request):
 
 @require_GET
 def health_check(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+    except Exception:
+        logger.exception("Readiness check failed")
+        return JsonResponse({"status": "unavailable"}, status=503)
     return JsonResponse({"status": "ok", "framework": "django"})
 
 
 @require_POST
+@rate_limit("signup", limit=5, window=3600)
 def register_view(request):
     data, error = _json_body(request)
     if error:
@@ -94,7 +203,7 @@ def register_view(request):
     from django.contrib.auth import get_user_model
     User = get_user_model()
     if User.objects.filter(email__iexact=email).exists() or User.objects.filter(username__iexact=email).exists():
-        return JsonResponse({"error": "This email is already registered. Try logging in."}, status=409)
+        return JsonResponse({"error": "This email is already registered. Log in or request a verification link."}, status=409)
 
     candidate = User(username=email, email=email, first_name=name[:150])
     try:
@@ -111,11 +220,18 @@ def register_view(request):
         logger.exception("Account creation failed")
         return JsonResponse({"error": "We could not create your account. Please try again."}, status=500)
 
-    login(request, candidate)
-    return JsonResponse({"user": _serialize_user(candidate)}, status=201)
+    try:
+        _send_verification_email(request, candidate)
+    except Exception:
+        logger.exception("Account verification email could not be sent")
+    return JsonResponse({
+        "message": "Your account is ready. Check your email to verify it before logging in.",
+        "email": candidate.email,
+    }, status=201)
 
 
 @require_POST
+@rate_limit("login", limit=10, window=900)
 def login_view(request):
     data, error = _json_body(request)
     if error:
@@ -131,8 +247,120 @@ def login_view(request):
     user = authenticate(request, username=account.username if account else email, password=password)
     if user is None:
         return JsonResponse({"error": "The email or password is incorrect."}, status=401)
+    profile = UserProfile.objects.filter(user=user).first()
+    if not profile or not profile.email_verified:
+        return JsonResponse({"error": "Please verify your email before logging in."}, status=403)
     login(request, user)
     return JsonResponse({"user": _serialize_user(user)})
+
+
+@require_POST
+@rate_limit("email-verification-resend", limit=5, window=3600)
+def resend_verification_view(request):
+    data, error = _json_body(request)
+    if error:
+        return error
+    email = str(data.get("email", "")).strip().lower()
+    if len(email) <= 254 and _email_is_valid(email):
+        from django.contrib.auth import get_user_model
+        user = get_user_model().objects.filter(email__iexact=email, is_active=True).first()
+        if user:
+            try:
+                _send_verification_email(request, user)
+            except Exception:
+                logger.exception("Account verification email could not be sent")
+    return JsonResponse({"message": "If your account still needs verification, a new link will be sent."})
+
+
+@require_POST
+@rate_limit("email-verification-confirm", limit=10, window=3600)
+def confirm_verification_view(request):
+    data, error = _json_body(request)
+    if error:
+        return error
+    uid, token = data.get("uid", ""), data.get("token", "")
+    if not isinstance(uid, str) or not isinstance(token, str):
+        return JsonResponse({"error": "This verification link is invalid or expired."}, status=400)
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    try:
+        user_id = force_str(urlsafe_base64_decode(uid))
+        user = User.objects.get(pk=user_id, is_active=True)
+    except (ValueError, TypeError, OverflowError, UnicodeDecodeError, User.DoesNotExist):
+        return JsonResponse({"error": "This verification link is invalid or expired."}, status=400)
+    if not default_token_generator.check_token(user, token):
+        return JsonResponse({"error": "This verification link is invalid or expired."}, status=400)
+    profile = UserProfile.objects.filter(user=user).first()
+    if not profile:
+        return JsonResponse({"error": "This verification link is invalid or expired."}, status=400)
+    if not profile.email_verified:
+        profile.email_verified = True
+        profile.save(update_fields=["email_verified"])
+    return JsonResponse({"status": "ok"})
+
+
+@require_POST
+@rate_limit("password-reset-request", limit=5, window=3600)
+def password_reset_request_view(request):
+    data, error = _json_body(request)
+    if error:
+        return error
+    email = str(data.get("email", "")).strip().lower()
+    generic = {"message": "If an account exists for that email, password reset instructions will be sent."}
+    if len(email) > 254 or not _email_is_valid(email):
+        return JsonResponse(generic)
+
+    from django.contrib.auth import get_user_model
+    for user in get_user_model().objects.filter(email__iexact=email, is_active=True):
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        query = urlencode({"uid": uid, "token": token})
+        reset_url = request.build_absolute_uri(f"/password-reset.html?{query}")
+        message = (
+            f"A password reset was requested for your FluentAI account.\n\n"
+            f"Use this link to choose a new password:\n{reset_url}\n\n"
+            "If you did not request this change, you can ignore this email."
+        )
+        try:
+            send_mail(
+                "Reset your FluentAI password",
+                message,
+                None,
+                [user.email],
+                fail_silently=False,
+            )
+        except Exception:
+            logger.exception("Password reset email could not be sent")
+    return JsonResponse(generic)
+
+
+@require_POST
+@rate_limit("password-reset-confirm", limit=10, window=3600)
+def password_reset_confirm_view(request):
+    data, error = _json_body(request)
+    if error:
+        return error
+    uid = data.get("uid", "")
+    token = data.get("token", "")
+    password = data.get("password", "")
+    if not all(isinstance(value, str) for value in (uid, token, password)):
+        return JsonResponse({"error": "This password reset link is invalid or expired."}, status=400)
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    try:
+        user_id = force_str(urlsafe_base64_decode(uid))
+        user = User.objects.get(pk=user_id, is_active=True)
+    except (ValueError, TypeError, OverflowError, UnicodeDecodeError, User.DoesNotExist):
+        return JsonResponse({"error": "This password reset link is invalid or expired."}, status=400)
+    if not default_token_generator.check_token(user, token):
+        return JsonResponse({"error": "This password reset link is invalid or expired."}, status=400)
+    try:
+        validate_password(password, user=user)
+    except ValidationError as exc:
+        return JsonResponse({"error": " ".join(exc.messages)}, status=400)
+    user.set_password(password)
+    user.save(update_fields=["password"])
+    return JsonResponse({"status": "ok"})
 
 
 def _serialize_user(user):
@@ -178,20 +406,38 @@ def update_profile_view(request):
     if len(email) > 254 or not _email_is_valid(email):
         return JsonResponse({"error": "Enter a valid email address."}, status=400)
     from django.contrib.auth import get_user_model
-    if get_user_model().objects.filter(email__iexact=email).exclude(pk=request.user.pk).exists():
+    User = get_user_model()
+    if User.objects.filter(email__iexact=email).exclude(pk=request.user.pk).exists() or User.objects.filter(username__iexact=email).exclude(pk=request.user.pk).exists():
         return JsonResponse({"error": "That email address is already in use."}, status=409)
     profile, _ = UserProfile.objects.get_or_create(
         user=request.user,
         defaults={"name": name, "email": request.user.email},
     )
-    profile.name = name
-    profile.save(update_fields=["name"])
-    request.user.first_name = name
-    request.user.email = email
-    request.user.username = email
-    request.user.save(update_fields=["first_name", "email", "username"])
-    profile.email = email
-    profile.save(update_fields=["email"])
+    email_changed = email != request.user.email
+    try:
+        with transaction.atomic():
+            profile.name = name
+            profile.email = email
+            if email_changed:
+                profile.email_verified = False
+            profile.save(update_fields=["name", "email", "email_verified"])
+            request.user.first_name = name
+            request.user.email = email
+            request.user.username = email
+            request.user.save(update_fields=["first_name", "email", "username"])
+    except IntegrityError:
+        return JsonResponse({"error": "That email address is already in use."}, status=409)
+    if email_changed:
+        updated_user = request.user
+        logout(request)
+        try:
+            _send_verification_email(request, updated_user)
+        except Exception:
+            logger.exception("Updated email verification could not be sent")
+        return JsonResponse({
+            "emailVerificationRequired": True,
+            "message": "We sent a verification link to your new email. Log in after verifying it.",
+        })
     return JsonResponse({"user": _serialize_user(request.user)})
 
 
@@ -251,6 +497,7 @@ def delete_account_view(request):
 
 
 @require_POST
+@rate_limit("chat", limit=30, window=60, by_user=True)
 def chat_view(request):
     data, error = _json_body(request)
     if error:
@@ -282,6 +529,7 @@ def chat_view(request):
             defaults={"name": request.user.get_full_name() or request.user.email, "email": request.user.email},
         )
 
+    guest_key = None if profile else _guest_session_key(request)
     session = None
     session_id = data.get("session_id")
     if session_id:
@@ -289,10 +537,14 @@ def chat_view(request):
         if profile:
             sessions = sessions.filter(user=profile)
         else:
-            sessions = sessions.filter(user__isnull=True)
+            sessions = sessions.filter(user__isnull=True, guest_session_key=guest_key)
         session = sessions.first()
     if not session:
-        session = PracticeSession.objects.create(user=profile, challenge=challenge)
+        session = PracticeSession.objects.create(
+            user=profile,
+            challenge=challenge,
+            guest_session_key=guest_key,
+        )
 
     user_transcript = Transcript.objects.create(session=session, speaker="user", text=text)
     started = time.monotonic()
@@ -333,7 +585,7 @@ def finish_session_view(request):
         profile = UserProfile.objects.filter(user=request.user).first()
         sessions = sessions.filter(user=profile) if profile else sessions.none()
     else:
-        sessions = sessions.filter(user__isnull=True)
+        sessions = sessions.filter(user__isnull=True, guest_session_key=_guest_session_key(request))
     session = sessions.first()
     if not session:
         return JsonResponse({"error": "Session not found."}, status=404)
@@ -373,6 +625,7 @@ Scores must be integers from 0 to 100. Be specific, supportive, and point out on
 
 
 @require_POST
+@rate_limit("writing", limit=10, window=3600, by_user=True)
 def analyze_writing_view(request):
     denied = _auth_required(request)
     if denied:

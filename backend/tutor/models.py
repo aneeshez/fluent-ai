@@ -13,6 +13,7 @@ class UserProfile(models.Model):
     )
     name = models.CharField(max_length=100, default='Guest')
     email = models.EmailField(unique=True)
+    email_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -21,6 +22,7 @@ class UserProfile(models.Model):
 
 class PracticeSession(models.Model):
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="sessions", null=True, blank=True)
+    guest_session_key = models.CharField(max_length=40, null=True, blank=True, db_index=True)
     challenge = models.CharField(max_length=50, blank=True, null=True)
     started_at = models.DateTimeField(default=timezone.now)
     ended_at = models.DateTimeField(null=True, blank=True)
@@ -65,3 +67,12 @@ class WritingSubmission(models.Model):
 
     def __str__(self):
         return f"Writing submission #{self.pk} by {self.user.email}"
+
+
+class RequestRateLimit(models.Model):
+    key = models.CharField(max_length=64, primary_key=True)
+    count = models.PositiveIntegerField(default=0)
+    expires_at = models.DateTimeField(db_index=True)
+
+    def __str__(self):
+        return f"Rate limit bucket ending at {self.expires_at}"

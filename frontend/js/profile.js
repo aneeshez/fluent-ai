@@ -110,6 +110,12 @@ window.closeModal = id => document.getElementById(id)?.classList.remove('show');
                     email: document.getElementById('editEmail').value.trim()
                 })
             });
+            if (result.emailVerificationRequired) {
+                localStorage.removeItem('fluentai_user');
+                message('editMsg', result.message, 'success');
+                setTimeout(() => { window.location.href = 'login.html'; }, 1600);
+                return;
+            }
             Object.assign(user, result.user);
             localStorage.setItem('fluentai_user', JSON.stringify(user));
             text('profileName', user.name); text('profileEmail', user.email); text('profileAvatar', user.name.charAt(0).toUpperCase());

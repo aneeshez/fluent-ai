@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,7 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FluentAI - Master English with AI-Powered Learning</title>
-    <link rel="icon" href="images/logo-icon.jpg" type="image/jpeg">
+    <link rel="icon" href="{% static 'images/logo-icon.jpg' %}" type="image/jpeg">
   <meta name="description"
     content="Improve your English speaking and writing with AI-powered real-time feedback. Practice conversations, take writing tests, and track your progress.">
 
@@ -15,8 +16,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="css/design-system.css">
-  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
 
   <style>
     .features-grid {
@@ -56,7 +57,7 @@
       .features-grid { grid-template-columns: 1fr; }
     }
   </style>
-    <link rel="stylesheet" href="css/redesign.css?v=night-v7">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
 </head>
 
 <body>
@@ -66,7 +67,7 @@
       <div class="nav-container">
         <a href="index.html" class="nav-logo">
           <div class="nav-logo-icon">
-            <img src="images/logo.jpg" alt="FluentAI">
+            <img src="{% static 'images/logo.jpg' %}" alt="FluentAI">
           </div>
           <span class="nav-logo-text">Fluent<span>AI</span></span>
         </a>
@@ -94,7 +95,7 @@
     <div class="nav-mobile" id="navMobile">
       <div class="nav-mobile-header">
         <a href="index.html" class="nav-logo">
-          <div class="nav-logo-icon"><img src="images/logo.jpg" alt="FluentAI"></div>
+          <div class="nav-logo-icon"><img src="{% static 'images/logo.jpg' %}" alt="FluentAI"></div>
           <span class="nav-logo-text">FluentAI</span>
         </a>
         <button class="btn btn-icon btn-secondary" id="navClose">
@@ -363,7 +364,7 @@
         <div class="footer-grid">
           <div class="footer-brand">
             <div class="footer-logo">
-              <div class="nav-logo-icon"><img src="images/logo.jpg" alt="FluentAI"></div>
+              <div class="nav-logo-icon"><img src="{% static 'images/logo.jpg' %}" alt="FluentAI"></div>
               <span>FluentAI</span>
             </div>
             <p class="footer-description">

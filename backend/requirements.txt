@@ -1,4 +1,7 @@
-django>=5.0
-django-cors-headers
-groq
-python-dotenv
+Django>=6.1,<6.2
+dj-database-url>=2.3,<3
+groq>=1.7,<2
+gunicorn>=23,<24
+psycopg[binary]>=3.2,<4
+python-dotenv>=1.2,<2
+whitenoise>=6.9,<7

@@ -1,11 +1,12 @@
-from django.conf import settings
 from django.contrib import admin
-from django.urls import path, include, re_path
-from django.views.static import serve
+from django.urls import path, include
+from tutor import views as tutor_views
+from tutor.views import rate_limit
+
+admin.site.login = rate_limit("admin-login", limit=10, window=900)(admin.site.login)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('tutor.urls')),
-    # Serve all frontend static files (CSS, JS, images) directly from the frontend folder
-    re_path(r'^(?P<path>.+)$', serve, {'document_root': settings.FRONTEND_DIR}),
+    path('<str:page_name>.html', tutor_views.page, name='page'),
 ]

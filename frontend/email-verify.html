@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Verify your FluentAI email address.">
+    <title>Verify your email - FluentAI</title>
+    <link rel="icon" href="{% static 'images/logo-icon.jpg' %}" type="image/jpeg">
+    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/redesign.css' %}">
+    <style>
+        .verify-message { display:none; margin:var(--space-4) 0; padding:12px 14px; border-radius:10px; font-size:14px; }
+        .verify-message.show { display:block; }
+        .verify-message.error { color:#f87171; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); }
+        .verify-message.success { color:#34d399; background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.3); }
+        .verify-login { display:inline-block; margin-top:var(--space-4); color:var(--accent-primary); }
+    </style>
+</head>
+<body>
+    <main class="auth-layout">
+        <section class="glass-card auth-card animate-scale-in" aria-labelledby="verifyTitle">
+            <header class="auth-header">
+                <a href="index.html" class="auth-logo">
+                    <div class="nav-logo-icon"><img src="{% static 'images/logo.jpg' %}" alt=""></div>
+                    <span class="nav-logo-text">Fluent<span>AI</span></span>
+                </a>
+                <h1 class="auth-title" id="verifyTitle">Verify your email</h1>
+                <p class="auth-subtitle" id="verifySubtitle">Checking your verification link…</p>
+            </header>
+            <div class="verify-message" id="verifyMessage" role="status"></div>
+            <a class="verify-login" id="verifyLogin" href="login.html" hidden>Continue to log in</a>
+        </section>
+    </main>
+    <script src="{% static 'js/api.js' %}"></script>
+    <script src="{% static 'js/email-verify.js' %}"></script>
+</body>
+</html>

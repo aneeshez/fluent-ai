@@ -2,41 +2,43 @@
 
 ## Introduction
 
-FluentAI is an English communication practice app for people who want to speak and write with more confidence. Learners can talk with Luna, an AI tutor, practice real-life situations, get feedback on their writing, and follow their progress over time.
+FluentAI is an English communication practice app for people who want to speak and write with more confidence. Learners can practice real-life conversations with Luna, get feedback on their writing, and follow their progress over time.
 
-The project brings together a browser-based interface, a Django backend, and Groq-powered AI feedback. Speech recognition and spoken replies use browser features, so learners can practice without installing a separate speech app.
+The website uses a Django backend with a browser-based frontend. Groq provides AI feedback, while speech recognition and spoken replies use supported browser features.
 
-## What you can do
+## Features
 
-- Practice spoken English with Luna and review conversation transcripts
-- Choose from eight guided speaking challenges, including introductions, storytelling, and interviews
-- Submit writing for grammar, vocabulary, coherence, and task feedback
-- Create an account to save writing and speaking progress
-- Track practice sessions, words spoken, streaks, and XP on the dashboard
-- Use the animated tutor avatar and confidence meter during speaking practice
+- Spoken English practice with an AI tutor, transcripts, and pronunciation-friendly speech controls
+- Eight guided speaking challenges, including introductions, storytelling, and interviews
+- Writing assessments with grammar, vocabulary, coherence, and task feedback
+- Email/password accounts with email verification, password recovery, and secure session login
+- Progress dashboard with sessions, words spoken, streaks, challenge history, and XP
+- Animated tutor avatar and a confidence meter during speaking practice
 
-Google sign-in is not configured. A Groq API key is needed for AI writing feedback and live AI conversation. Without the key, speaking practice uses a basic fallback response and writing analysis is unavailable.
+Google sign-in is not offered because OAuth is not configured. A Groq API key is required for AI feedback; the app uses a basic response when the key is absent.
 
 ## Technology
 
 - **Frontend:** HTML, CSS, and vanilla JavaScript
-- **Backend:** Python 3.10+ and Django
+- **Backend:** Python 3.12+ and Django 6.1
 - **AI:** Groq API
 - **Speech:** Browser Web Speech API and SpeechSynthesis API
 - **Local database:** SQLite
+- **Production database:** PostgreSQL
+- **Production web server:** Gunicorn with WhiteNoise for collected static files
 
-Speech recognition and microphone access depend on the browser. Use a supported browser and allow microphone access; localhost is allowed for development, while hosted sites need HTTPS.
+Microphone access requires a supported browser. Browsers allow microphone access on localhost during development; hosted sites must use HTTPS.
 
-## Get started
+## Run locally
 
 ### Requirements
 
-- Python 3.10 or newer
-- A Groq API key for AI features ([create one in the Groq console](https://console.groq.com))
+- Python 3.12 or newer
+- A Groq API key for live AI features ([Groq console](https://console.groq.com))
 
 ### Install
 
-From the project folder, create a virtual environment and install the backend packages:
+From the project folder:
 
 ```powershell
 cd backend
@@ -48,55 +50,98 @@ Copy-Item .env.example .env
 
 On macOS or Linux, activate the environment with `source .venv/bin/activate` and copy `.env.example` to `.env`.
 
-Open `backend/.env` and set `DJANGO_SECRET_KEY` to a unique random value. For local work, set `DEBUG=True` and add your `GROQ_API_KEY`. Keep this file private; it is ignored by Git.
+Edit `backend/.env`: set `DJANGO_SECRET_KEY` to a unique random value, keep `DEBUG=True` for local development, and add your `GROQ_API_KEY`. Keep this file private; Git ignores it.
 
-### Start the app
+The development email backend prints verification and password-reset links in the `runserver` terminal. Existing account profiles must verify their email once after applying the new email-verification migration; the login page provides a resend action.
 
-Run these commands from the `backend/` folder:
+### Start
+
+Run these commands from `backend/`:
 
 ```powershell
 python manage.py migrate
 python manage.py runserver
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser. Create an account to save writing submissions and view your progress. To run the automated backend checks, use `python manage.py test` from `backend/`.
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Use `python manage.py test` to run the backend test suite.
 
-The local SQLite database is created at `backend/db.sqlite3`. It is ignored by Git and contains local account and practice data, so keep a backup if you need to preserve it.
+The local database is `backend/db.sqlite3`. It is ignored by Git and contains account and practice data; back it up if you need to preserve it.
 
-## Configuration
+## Production deployment
 
-The available environment variables are listed in `backend/.env.example`.
+The repository includes a Dockerfile for a Gunicorn deployment. The host must provide PostgreSQL, SMTP email, HTTPS termination, and persistent secret configuration.
 
-| Variable | Use |
+Create an untracked `.env.production` file in the project root with these values:
+
+```dotenv
+DEBUG=False
+DJANGO_SECRET_KEY=<unique-random-secret-at-least-50-characters>
+ALLOWED_HOSTS=your-domain.example
+DATABASE_URL=postgresql://user:password@your-postgres-host:5432/fluentai
+GROQ_API_KEY=<your-groq-api-key>
+EMAIL_HOST=smtp.your-provider.example
+EMAIL_PORT=587
+EMAIL_HOST_USER=<your-smtp-user>
+EMAIL_HOST_PASSWORD=<your-smtp-password>
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=FluentAI <no-reply@your-domain.example>
+SECURE_SSL_REDIRECT=True
+TRUST_PROXY_SSL_HEADER=True
+TRUST_PROXY_IP_HEADER=True
+CSRF_TRUSTED_ORIGINS=https://your-domain.example
+```
+
+Use a PostgreSQL URL with URL-encoded credentials if they contain reserved characters. The application requires HTTPS in production. Set the proxy flags only behind a trusted proxy that replaces incoming `X-Forwarded-Proto` and `X-Forwarded-For` headers. HSTS defaults to one year; subdomain coverage and browser preload remain off until you explicitly confirm they are appropriate for your domain.
+
+Build the image, apply database migrations, and start the app:
+
+```powershell
+docker build -t fluentai .
+docker run --rm --env-file .env.production fluentai python manage.py migrate
+docker run -d --restart unless-stopped --name fluentai -p 127.0.0.1:8000:8000 --env-file .env.production fluentai
+```
+
+Configure the HTTPS proxy on the host to forward traffic to `127.0.0.1:8000` and pass the trusted forwarded headers. Check the app through the proxy at `/health/`; this endpoint checks PostgreSQL readiness. Schedule `python manage.py purge_rate_limits` daily to remove expired rate-limit records. Schedule database backups and test restoring them before launch.
+
+## Configuration reference
+
+`backend/.env.example` shows the local settings. Production settings use:
+
+| Variable | Purpose |
 |---|---|
-| `DJANGO_SECRET_KEY` | Django session and signing key; use a unique random value |
-| `DEBUG` | Local debugging; should be `False` on a public deployment |
-| `ALLOWED_HOSTS` | Comma-separated hostnames accepted by Django |
-| `GROQ_API_KEY` | Enables Groq-powered conversation and writing analysis |
-| `CORS_ALLOW_ALL_ORIGINS` | Keep disabled unless a separate frontend origin is required |
-| `SECURE_SSL_REDIRECT` | Redirect HTTP requests after HTTPS is set up |
-| `SECURE_HSTS_SECONDS` | HSTS duration; configure only after confirming HTTPS is enforced |
-| `SESSION_COOKIE_SECURE` | Restrict session cookies to HTTPS |
-| `CSRF_COOKIE_SECURE` | Restrict CSRF cookies to HTTPS |
+| `DJANGO_SECRET_KEY` | Unique secret used for signing and sessions |
+| `DEBUG` | Must be `False` in production |
+| `ALLOWED_HOSTS` | Comma-separated public hostnames |
+| `DATABASE_URL` | PostgreSQL connection string; production connections require SSL |
+| `GROQ_API_KEY` | Enables AI conversation and writing feedback |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | SMTP used for verification and password recovery |
+| `DEFAULT_FROM_EMAIL` | Sender shown on account emails |
+| `SECURE_SSL_REDIRECT` | Redirects HTTP to HTTPS |
+| `TRUST_PROXY_SSL_HEADER` | Trusts HTTPS state forwarded by the configured reverse proxy |
+| `TRUST_PROXY_IP_HEADER` | Uses the client IP forwarded by a trusted proxy for rate limits |
+| `CSRF_TRUSTED_ORIGINS` | HTTPS origins accepted for Django CSRF protection |
+| `SECURE_HSTS_SECONDS` | HSTS duration; defaults to one year in production |
 
-## Project files
+## Project structure
 
 ```text
 backend/
-  fluent_ai/       Django settings and URL configuration
-  tutor/           API, database models, AI integration, and tests
-  .env.example     Environment variable template
-  manage.py        Django management commands
+  fluent_ai/       Django settings, URL configuration, WSGI and ASGI entry points
+  tutor/           API, models, migrations, email flows, and tests
+  .env.example     Local environment template
 frontend/
   *.html           Website pages
-  css/             Page styles and shared design system
+  css/             Styles and shared design system
   js/              Frontend behavior and API calls
   images/          Brand assets
+Dockerfile         Production Gunicorn image
+.dockerignore      Excludes local data and secrets from the image
+README.md          Setup and deployment guide
 ```
 
 ## Checks
 
-Run from `backend/` before making a change or preparing a deployment:
+Run from `backend/`:
 
 ```powershell
 python manage.py check
@@ -105,17 +150,10 @@ python manage.py makemigrations --check --dry-run
 python manage.py check --deploy
 ```
 
-The tests cover core API behavior. They do not test a live Groq account, browser speech, responsive layouts, load, or the hosting environment.
+The test suite covers account verification and recovery, CSRF, rate limits, guest-session isolation, API behavior, and static page delivery. It cannot validate your live Groq and SMTP credentials, proxy, microphone permissions, hosting limits, or restore process.
 
 ## Production readiness
 
-FluentAI is currently a development project, **not ready for a public production launch**. Before opening it to real users:
+The app now has production-oriented settings, PostgreSQL support, HTTPS cookie and redirect defaults, collected static assets, shared throttling, guest-session ownership, email verification, password recovery, logging, and a Docker/Gunicorn deployment path.
 
-- Bind guest practice sessions to the browser or account that created them; currently, another guest who learns a session ID may access or finish that session.
-- Serve frontend assets through a production web server or static-file service instead of Django's development static-file view.
-- Add rate limits for login, signup, and AI endpoints.
-- Replace SQLite with a production database and configure backups and recovery.
-- Configure HTTPS, a unique secret, secure cookies, allowed hosts, logging, monitoring, and deployment checks for the selected host.
-- Finish email verification and password recovery, and replace the placeholder privacy and terms links before collecting real user data.
-
-`python manage.py check --deploy` should be reviewed with the production environment configured. A passing local test suite alone does not confirm that the hosted app, Groq integration, microphone access, or production operations are ready.
+It still needs a real deployment environment and a final launch review. Configure valid PostgreSQL, SMTP, Groq, domain, and proxy credentials; verify HTTPS and email delivery; replace the placeholder Privacy Policy and Terms links with owner-reviewed content; and run browser, load, and backup-restore checks on the chosen host. `check --deploy` can also report HSTS subdomain and preload warnings; enable those only after confirming your domain and every affected subdomain meet the HTTPS requirements.
